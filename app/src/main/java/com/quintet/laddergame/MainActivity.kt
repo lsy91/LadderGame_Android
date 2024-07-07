@@ -10,14 +10,19 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
+import com.google.gson.reflect.TypeToken
+import com.quintet.laddergame.bean.Player
+import com.quintet.laddergame.bean.Winner
 import com.quintet.laddergame.ui.LadderGameScreen
 import com.quintet.laddergame.ui.SelectPlayerCountScreen
 import com.quintet.laddergame.ui.SelectWinnerCountScreen
 import com.quintet.laddergame.ui.theme.LadderGameTheme
-import java.util.ArrayList
+import com.quintet.laddergame.utils.LadderGameUtils
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -51,40 +56,46 @@ fun LadderGameContent() {
             SelectPlayerCountScreen(
                 onSelectedPlayerInfo = { playerCount, playerNames ->
 
-                    val currentBackStackEntry = navController.currentBackStackEntry
-                    val args = currentBackStackEntry?.arguments ?: Bundle()
-                    args.apply {
-                        putInt("playerCount", playerCount)
-                        putStringArrayList("playerNames", playerNames as? ArrayList<String> ?: arrayListOf())
-                    }
+                    val playerInfo = Player(
+                        playerCount = playerCount,
+                        playerNames = playerNames
+                    )
 
                     // 당첨 수 화면으로 이동
-                    navController.navigate("SelectWinnerCount")
+                    navController.navigate("SelectWinnerCount" + "/" + "${LadderGameUtils.convertObjToJSON(playerInfo)}")
                 }
             )
         }
-        composable("SelectWinnerCount") { navBackStackEntry ->
-            val playerCount = navBackStackEntry.arguments?.getInt("playerCount") ?: 0
-            val playerNames = navBackStackEntry.arguments?.getStringArrayList("playerNames") ?: arrayListOf<String>()
+
+        composable(
+            route = "SelectWinnerCount" + "/" + "{playerInfo}",
+            arguments = listOf( navArgument("playerInfo") { type = NavType.StringType; defaultValue = ""} )
+        ) { navBackStackEntry ->
+
+            val playerInfoJson = navBackStackEntry.arguments?.getString("playerInfo")
+            val playerInfoToken = object : TypeToken<Player>() {}.type
+            val selectedPlayerInfo = LadderGameUtils.convertJSONToObj<Player>(playerInfoJson, playerInfoToken)
 
             SelectWinnerCountScreen(
-                playerCount = playerCount,
+                playerCount = selectedPlayerInfo?.playerCount ?: 0,
                 onSelectedGameInfo = { winnerCount, winnerTitles ->
 
-                    val currentBackStackEntry = navController.currentBackStackEntry
-                    val args = currentBackStackEntry?.arguments ?: Bundle()
-                    args.apply {
-                        putInt("playerCount", playerCount)
-                        putStringArrayList("playerNames", playerNames)
-                        putInt("winnerCount", winnerCount)
-                        putStringArrayList("winnerTitles", winnerTitles as? ArrayList<String> ?: arrayListOf())
-                    }
+                    val winnerInfo = Winner(
+                        winnerCount = winnerCount,
+                        winnerPrizes = winnerTitles
+                    )
 
-                    navController.navigate("LadderGameView")
+                    navController.navigate("LadderGameView" + "/" + "${LadderGameUtils.convertObjToJSON(winnerInfo)}")
                 }
             )
         }
-        composable("LadderGameView") { navBackStackEntry ->
+
+        composable(
+            route = "LadderGameView",
+            arguments = listOf(
+                navArgument("LadderGameView") { type = NavType.StringType; defaultValue = "SelectPlayerCount" }
+            )
+        ) { navBackStackEntry ->
 
             val playerCount = navBackStackEntry.arguments?.getInt("playerCount") ?: 0
             val playerNames = navBackStackEntry.arguments?.getStringArrayList("playerNames") ?: arrayListOf<String>()
