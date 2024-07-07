@@ -19,7 +19,8 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavController
+import com.quintet.laddergame.bean.Player
+import com.quintet.laddergame.bean.Winner
 
 /**
  * Ladder Game Screen
@@ -28,14 +29,11 @@ import androidx.navigation.NavController
  */
 @Composable
 fun LadderGameScreen(
-    navController: NavController,
-    playerCount: Int,
-    playerNames: List<String>,
-    winnerCount: Int,
-    winnerTitles: List<String>
+    playerInfo: Player,
+    winnerInfo: Winner
 ) {
-    val shuffledPlayerNames = remember { playerNames.shuffled() }
-    val shuffledWinnerTitles = remember { winnerTitles.shuffled() }
+    val shuffledPlayerNames = remember { playerInfo.playerNames.shuffled() }
+    val shuffledWinnerTitles = remember { winnerInfo.winnerPrizes.shuffled() }
 
     Column(modifier = Modifier.fillMaxSize().background(Color.Gray)) {
         Canvas(
@@ -44,12 +42,12 @@ fun LadderGameScreen(
                 .fillMaxSize()
                 .padding(16.dp)
         ) {
-            val ladderWidth = size.width / (playerCount + 1)
-            val ladderHeight = size.height / (winnerCount + 1)
+            val ladderWidth = size.width / (playerInfo.playerCount + 1)
+            val ladderHeight = size.height / (winnerInfo.winnerCount + 1)
             val stroke = Stroke(4.dp.toPx())
 
             // Draw vertical lines
-            for (i in 0 until playerCount) {
+            for (i in 0 until playerInfo.playerCount) {
                 drawLine(
                     Color.White,
                     start = Offset((i + 1) * ladderWidth, 0f),
@@ -73,14 +71,14 @@ fun LadderGameScreen(
             }
 
             // Draw horizontal lines
-            for (i in 0 until winnerCount) {
+            for (i in 0 until winnerInfo.winnerCount) {
                 drawLine(
                     Color.White,
                     start = Offset(ladderWidth, (i + 1) * ladderHeight),
                     end = Offset(size.width - ladderWidth, (i + 1) * ladderHeight),
                     strokeWidth = stroke.width
                 )
-                val winnerTitle = shuffledWinnerTitles.getOrElse(i) { "" }
+                val winnerTitle = shuffledWinnerTitles.getOrElse(i) { "꽝" }
                 drawIntoCanvas {
                     it.nativeCanvas.drawText(
                         winnerTitle,
@@ -96,7 +94,7 @@ fun LadderGameScreen(
                 }
 
                 // Draw additional horizontal line in the middle for each column if playerCount > 1
-                if (playerCount > 1 && i < winnerCount - 1) {
+                if (playerInfo.playerCount > 1 && i < winnerInfo.winnerCount - 1) {
                     drawLine(
                         Color.White,
                         start = Offset(ladderWidth, (i + 1) * ladderHeight + ladderHeight / 2),

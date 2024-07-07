@@ -91,7 +91,7 @@ fun SelectWinnerCountScreen(
                             if (inputWinnerCount.isBlank() || (count != null && count in 1..< playerCount)) {
                                 winnerCount = inputWinnerCount
                                 count?.let {
-                                    winnerTitles = List(it) { index -> winnerTitles.getOrNull(index) ?: "꽝" }
+                                    winnerTitles = List(it) { index -> winnerTitles.getOrNull(index) ?: "" }
                                 }
                             }
                         },

@@ -9,6 +9,6 @@ import androidx.annotation.Keep
  */
 @Keep
 data class Winner(
-    val winnerCount: Int,
-    val winnerPrizes: List<String>
+    val winnerCount: Int = 0,
+    val winnerPrizes: List<String> = listOf()
 )

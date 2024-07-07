@@ -9,6 +9,6 @@ import androidx.annotation.Keep
  */
 @Keep
 data class Player(
-    val playerCount: Int,
-    val playerNames: List<String>
+    val playerCount: Int = 0,
+    val playerNames: List<String> = listOf()
 )

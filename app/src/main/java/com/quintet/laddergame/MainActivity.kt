@@ -85,29 +85,34 @@ fun LadderGameContent() {
                         winnerPrizes = winnerTitles
                     )
 
-                    navController.navigate("LadderGameView" + "/" + "${LadderGameUtils.convertObjToJSON(winnerInfo)}")
+                    navController.navigate("LadderGameView"
+                            + "/"
+                            + "${LadderGameUtils.convertObjToJSON(selectedPlayerInfo)}"
+                            + "/"
+                            + "${LadderGameUtils.convertObjToJSON(winnerInfo)}")
                 }
             )
         }
 
         composable(
-            route = "LadderGameView",
+            route = "LadderGameView" + "/" + "{playerInfo}" + "/" + "{winnerInfo}",
             arguments = listOf(
-                navArgument("LadderGameView") { type = NavType.StringType; defaultValue = "SelectPlayerCount" }
+                navArgument("playerInfo") { type = NavType.StringType; defaultValue = ""},
+                navArgument("winnerInfo") { type = NavType.StringType; defaultValue = ""},
             )
         ) { navBackStackEntry ->
 
-            val playerCount = navBackStackEntry.arguments?.getInt("playerCount") ?: 0
-            val playerNames = navBackStackEntry.arguments?.getStringArrayList("playerNames") ?: arrayListOf<String>()
-            val winnerCount = navBackStackEntry.arguments?.getInt("winnerCount") ?: 0
-            val winnerTitles = navBackStackEntry.arguments?.getStringArrayList("winnerTitles") ?: arrayListOf<String>()
+            val playerInfoJson = navBackStackEntry.arguments?.getString("playerInfo")
+            val playerInfoToken = object : TypeToken<Player>() {}.type
+            val selectedPlayerInfo = LadderGameUtils.convertJSONToObj<Player>(playerInfoJson, playerInfoToken)
+
+            val winnerInfoJson = navBackStackEntry.arguments?.getString("winnerInfo")
+            val winnerInfoToken = object : TypeToken<Winner>() {}.type
+            val selectedWinnerInfo = LadderGameUtils.convertJSONToObj<Winner>(winnerInfoJson, winnerInfoToken)
 
             LadderGameScreen(
-                navController = navController,
-                playerCount = playerCount,
-                playerNames = playerNames,
-                winnerCount = winnerCount,
-                winnerTitles = winnerTitles
+                playerInfo = selectedPlayerInfo ?: Player(),
+                winnerInfo = selectedWinnerInfo ?: Winner()
             )
         }
     }
