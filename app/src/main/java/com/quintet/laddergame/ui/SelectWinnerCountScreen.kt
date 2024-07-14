@@ -100,6 +100,7 @@ fun SelectWinnerCountScreen(
                             keyboardType = KeyboardType.Number,
                             imeAction = ImeAction.Done
                         ),
+                        singleLine = true,
                         colors = TextFieldDefaults.colors(
                             focusedContainerColor = Color.Transparent, // 포커스된 배경색 투명으로 설정
                             unfocusedContainerColor = Color.Transparent // 포커스 해제된 배경색 투명으로 설정
@@ -134,6 +135,11 @@ fun SelectWinnerCountScreen(
                                     this[index] = inputWinnerTitle
                                 }
                             },
+                            keyboardOptions = KeyboardOptions.Default.copy(
+                                keyboardType = KeyboardType.Number,
+                                imeAction = ImeAction.Next
+                            ),
+                            singleLine = true,
                             modifier = Modifier.weight(1f)
                         )
                     }

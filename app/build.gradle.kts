@@ -77,4 +77,7 @@ dependencies {
 
     // Gson
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+
+    // Coroutines
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.0")
 }

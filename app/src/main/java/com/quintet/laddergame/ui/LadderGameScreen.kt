@@ -17,6 +17,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -30,9 +31,13 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.quintet.laddergame.bean.LadderLine
 import com.quintet.laddergame.bean.Player
 import com.quintet.laddergame.bean.Winner
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.util.Random
 
 /**
  * Ladder Game Screen
@@ -51,6 +56,14 @@ fun LadderGameScreen(
     var gameInProgress by remember { mutableStateOf(false) }
     val animatedPosition = remember { Animatable(0f) }
     val scope = rememberCoroutineScope()
+
+    var ladderData by remember { mutableStateOf(listOf<List<LadderLine>>()) }
+
+    LaunchedEffect(playerInfo.playerCount) {
+        ladderData = withContext(Dispatchers.Default) {
+            generateLadderData(playerInfo.playerCount)
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -75,7 +88,9 @@ fun LadderGameScreen(
                 .fillMaxWidth()
                 .padding(horizontal = gameElementsPadding)
         ) {
-            drawLadder(playerInfo.playerCount)
+            ladderData.forEach { column ->
+                drawLadder(animatedPosition.value, column)
+            }
         }
 
         Spacer(modifier = Modifier.height(gameElementsPadding)) // 세로 요소 간 간격
@@ -94,6 +109,7 @@ fun LadderGameScreen(
             onClick = {
                 if (!gameInProgress) {
                     scope.launch {
+                        animatedPosition.snapTo(0f)
                         animatedPosition.animateTo(
                             targetValue = 1f,
                             animationSpec = tween(durationMillis = 1000)
@@ -150,19 +166,81 @@ fun DrawWinners(playerCount: Int, shuffledWinnerTitles: List<String>) {
     }
 }
 
-fun DrawScope.drawLadder(playerCount: Int) {
-    val ladderWidth = size.width / (playerCount + 1)
-    val stroke = Stroke(4.dp.toPx())
-    val ladderHeight = size.height
+suspend fun generateLadderData(playerCount: Int): List<List<LadderLine>> = withContext(Dispatchers.Default) {
+    val ladderData = mutableListOf<List<LadderLine>>()
+    val ladderWidth = 1f / (playerCount + 1)
+    val stepHeight = 1f / 11  // 총 11개 구간으로 나눔
+    val random = Random()
 
-    // Draw vertical lines
+    // List to store horizontal lines for each column
+    val horizontalLinesForEachColumn = MutableList(playerCount) { mutableSetOf<Int>() }
+
+    // Generate horizontal lines for each column
+    for (i in 0 until playerCount - 1) { // 마지막 세로줄에서는 가로줄을 그리지 않음
+        val x = (i + 1) * ladderWidth
+
+        // Check previous column's horizontal lines
+        val previousHorizontalLines = horizontalLinesForEachColumn.getOrNull(i - 1) ?: emptySet()
+
+        // Generate random number of horizontal lines (1 to 9)
+        val horizontalLineCount = random.nextInt(9) + 1
+        val horizontalLines = mutableSetOf<Int>()
+
+        // Generate unique y coordinates for horizontal lines
+        while (horizontalLines.size < horizontalLineCount) {
+            val y = random.nextInt(10) + 1 // 1 to 10
+            // Check if y coordinate is already used by the previous column's lines
+            val overlapping = previousHorizontalLines.any { it == y }
+            if (!overlapping) {
+                horizontalLines.add(y)
+            }
+        }
+
+        // Add generated horizontal lines to ladderLines
+        val columnLadderLines = mutableListOf<LadderLine>()
+        for (line in horizontalLines) {
+            val y = line * stepHeight
+            columnLadderLines.add(LadderLine(Offset(x, y), Offset(x + ladderWidth, y)))
+            horizontalLinesForEachColumn[i].add(line)
+        }
+        ladderData.add(columnLadderLines)
+    }
+
+    // Generate vertical lines
     for (i in 0 until playerCount) {
         val x = (i + 1) * ladderWidth
+        ladderData.add(listOf(LadderLine(Offset(x, 0f), Offset(x, 1f))))
+    }
+
+    return@withContext ladderData
+}
+
+fun DrawScope.drawLadder(animatedValue: Float, ladderLines: List<LadderLine>) {
+    val stroke = Stroke(4.dp.toPx())
+    val ladderHeight = size.height
+    val animatedHeight = ladderHeight * animatedValue
+
+    // Draw ladder lines from precomputed data
+    ladderLines.forEach { line ->
+        val start = Offset(line.start.x * size.width, line.start.y * ladderHeight)
+        val end = Offset(line.end.x * size.width, line.end.y * ladderHeight)
+
         drawLine(
             Color.White,
-            start = Offset(x, 0f),
-            end = Offset(x, ladderHeight),
+            start = start,
+            end = end,
             strokeWidth = stroke.width
         )
+
+        if (line.start.y == 0f && line.end.y == 1f) {
+            // Draw animated red line for vertical lines
+            val animatedEnd = Offset(line.end.x * size.width, animatedHeight)
+            drawLine(
+                Color.Red,
+                start = start,
+                end = animatedEnd,
+                strokeWidth = stroke.width
+            )
+        }
     }
 }
