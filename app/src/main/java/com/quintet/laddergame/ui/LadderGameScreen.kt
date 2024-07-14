@@ -37,6 +37,7 @@ import com.quintet.laddergame.bean.LadderLine
 import com.quintet.laddergame.bean.Player
 import com.quintet.laddergame.bean.Winner
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.Random
@@ -60,14 +61,19 @@ fun LadderGameScreen(
     val scope = rememberCoroutineScope()
 
     var loading by remember { mutableStateOf(true) }
-
-    var ladderData by remember { mutableStateOf(listOf<List<LadderLine>>()) }
+    var ladderData by remember { mutableStateOf<List<List<LadderLine>>>(emptyList()) }
 
     LaunchedEffect(playerInfo.playerCount) {
-        ladderData = withContext(Dispatchers.Main) {
-            generateLadderData(playerInfo.playerCount)
+        // Flow를 통해 ladderData를 비동기적으로 가져오기
+        val flowResult = flow {
+            emit(generateLadderData(playerInfo.playerCount))
         }
-        loading = false
+
+        // collect 함수를 사용하여 Flow의 데이터를 받아옴
+        flowResult.collect { newData ->
+            ladderData = newData
+            loading = false // 데이터가 로드되었음을 나타내는 상태를 업데이트
+        }
     }
 
     Column(
