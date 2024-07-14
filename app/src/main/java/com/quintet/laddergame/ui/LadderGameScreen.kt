@@ -13,8 +13,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -57,12 +59,15 @@ fun LadderGameScreen(
     val animatedPosition = remember { Animatable(0f) }
     val scope = rememberCoroutineScope()
 
+    var loading by remember { mutableStateOf(true) }
+
     var ladderData by remember { mutableStateOf(listOf<List<LadderLine>>()) }
 
     LaunchedEffect(playerInfo.playerCount) {
-        ladderData = withContext(Dispatchers.Default) {
+        ladderData = withContext(Dispatchers.Main) {
             generateLadderData(playerInfo.playerCount)
         }
+        loading = false
     }
 
     Column(
@@ -82,14 +87,24 @@ fun LadderGameScreen(
 
         Spacer(modifier = Modifier.height(gameElementsPadding)) // 세로 요소 간 간격
 
-        Canvas(
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxWidth()
-                .padding(horizontal = gameElementsPadding)
-        ) {
-            ladderData.forEach { column ->
-                drawLadder(animatedPosition.value, column)
+        if (loading) {
+            // 로딩 중일 때 보여질 로딩 바
+            CircularProgressIndicator(
+                modifier = Modifier
+                    .size(50.dp)
+                    .align(Alignment.CenterHorizontally)
+            )
+        } else {
+            // 사다리 그리기
+            Canvas(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+                    .padding(horizontal = gameElementsPadding)
+            ) {
+                ladderData.forEach { column ->
+                    drawLadder(animatedPosition.value, column)
+                }
             }
         }
 
