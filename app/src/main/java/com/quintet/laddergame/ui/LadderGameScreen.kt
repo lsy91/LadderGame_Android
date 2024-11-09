@@ -60,7 +60,6 @@ fun LadderGameScreen(
     val animatedPosition = remember { Animatable(0f) }
     val scope = rememberCoroutineScope()
 
-    var loading by remember { mutableStateOf(true) }
     var ladderData by remember { mutableStateOf<List<List<LadderLine>>>(emptyList()) }
 
     LaunchedEffect(playerInfo.playerCount) {
@@ -72,7 +71,6 @@ fun LadderGameScreen(
         // collect 함수를 사용하여 Flow의 데이터를 받아옴
         flowResult.collect { newData ->
             ladderData = newData
-            loading = false // 데이터가 로드되었음을 나타내는 상태를 업데이트
         }
     }
 
@@ -93,7 +91,7 @@ fun LadderGameScreen(
 
         Spacer(modifier = Modifier.height(gameElementsPadding)) // 세로 요소 간 간격
 
-        if (loading) {
+        if (ladderData.isEmpty()) {
             // 로딩 중일 때 보여질 로딩 바
             CircularProgressIndicator(
                 modifier = Modifier
