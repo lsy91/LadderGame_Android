@@ -2,24 +2,23 @@ package com.quintet.laddergame.ui
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -27,20 +26,12 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.DrawScope
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.quintet.laddergame.bean.LadderLine
 import com.quintet.laddergame.bean.Player
 import com.quintet.laddergame.bean.Winner
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import java.util.Random
 
 /**
  * Ladder Game Screen
@@ -48,94 +39,97 @@ import java.util.Random
  * 2024-06-16 Created by sy.lee
  */
 @Composable
-fun LadderGameScreen(
-    playerInfo: Player,
-    winnerInfo: Winner
-) {
+fun LadderGameScreen(playerInfo: Player, winnerInfo: Winner) {
     val shuffledPlayerNames = remember { playerInfo.playerNames.shuffled() }
     val shuffledWinnerTitles = remember { winnerInfo.winnerPrizes.shuffled() }
     val gameElementsPadding = 16.dp
 
     var gameInProgress by remember { mutableStateOf(false) }
-    val animatedPosition = remember { Animatable(0f) }
-    val scope = rememberCoroutineScope()
-
-    var ladderData by remember { mutableStateOf<List<List<LadderLine>>>(emptyList()) }
-
-    LaunchedEffect(playerInfo.playerCount) {
-        // Flow를 통해 ladderData를 비동기적으로 가져오기
-        val flowResult = flow {
-            emit(generateLadderData(playerInfo.playerCount))
-        }
-
-        // collect 함수를 사용하여 Flow의 데이터를 받아옴
-        flowResult.collect { newData ->
-            ladderData = newData
-        }
+    val animatedPositions = remember(playerInfo.playerCount) {
+        List(playerInfo.playerCount) { Animatable(0f) }
     }
+    val scope = rememberCoroutineScope()
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Black),
+            .background(Color.Black)
+            .padding(horizontal = 20.dp), // 좌우 마진 20dp 설정
         verticalArrangement = Arrangement.Center
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 20.dp),
-            horizontalArrangement = Arrangement.SpaceEvenly
+        // 플레이어, 세로선, 당첨을 세로로 정렬
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally // 수평 중앙 정렬
         ) {
+            // 플레이어 이름 표시 (가로로 균등 정렬)
             DrawPlayers(playerInfo.playerCount, shuffledPlayerNames)
-        }
 
-        Spacer(modifier = Modifier.height(gameElementsPadding)) // 세로 요소 간 간격
+            Spacer(modifier = Modifier.height(gameElementsPadding))
 
-        if (ladderData.isEmpty()) {
-            // 로딩 중일 때 보여질 로딩 바
-            CircularProgressIndicator(
+            // 사다리 그리기 (세로줄을 선 형태로)
+            Box(
                 modifier = Modifier
-                    .size(50.dp)
-                    .align(Alignment.CenterHorizontally)
-            )
-        } else {
-            // 사다리 그리기
-            Canvas(
-                modifier = Modifier
-                    .weight(1f)
                     .fillMaxWidth()
-                    .padding(horizontal = gameElementsPadding)
+                    .padding(horizontal = 10.dp)
+                    .height(200.dp) // 사다리 영역 높이
             ) {
-                ladderData.forEach { column ->
-                    drawLadder(animatedPosition.value, column)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween // 세로선 균등 배치
+                ) {
+                    for (columnIndex in 0 until playerInfo.playerCount) {
+                        // 세로선 그리기
+                        Column(
+                            modifier = Modifier
+                                .width(2.dp) // 세로줄의 두께 설정
+                                .fillMaxHeight()
+                                .background(Color.White) // 세로줄 색상
+                                .offset(y = animatedPositions[columnIndex].value.dp) // 애니메이션 적용
+                        ) {
+                            // Spacer로 세로선의 중앙 정렬
+                            Spacer(modifier = Modifier.weight(1f)) // 위쪽 여백
+                            for (rowIndex in 0..10) {
+                                if (shouldDrawHorizontalLine(columnIndex, rowIndex)) {
+                                    Spacer(
+                                        modifier = Modifier
+                                            .fillMaxWidth() // 가로줄의 길이 설정
+                                            .height(2.dp) // 가로줄의 두께 설정
+                                            .background(Color.White)
+                                            .align(Alignment.Start) // 가로줄 위치
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(30.dp)) // 각 셀 간 간격
+                            }
+                            Spacer(modifier = Modifier.weight(1f)) // 아래쪽 여백
+                        }
+                    }
                 }
             }
-        }
 
-        Spacer(modifier = Modifier.height(gameElementsPadding)) // 세로 요소 간 간격
+            Spacer(modifier = Modifier.height(gameElementsPadding))
 
-        Row(
-            modifier = Modifier
-                .fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly
-        ) {
+            // 당첨 결과 표시 (가로로 균등 정렬)
             DrawWinners(playerInfo.playerCount, shuffledWinnerTitles)
         }
 
-        Spacer(modifier = Modifier.height(gameElementsPadding)) // 세로 요소 간 간격
+        Spacer(modifier = Modifier.height(gameElementsPadding))
 
+        // 시작 버튼
         Button(
             onClick = {
                 if (!gameInProgress) {
+                    gameInProgress = true
                     scope.launch {
-                        animatedPosition.snapTo(0f)
-                        animatedPosition.animateTo(
-                            targetValue = 1f,
-                            animationSpec = tween(durationMillis = 1000)
-                        )
+                        animatedPositions.forEachIndexed { index, animatable ->
+                            animatable.snapTo(0f) // 초기 위치로 설정
+                            animatable.animateTo(
+                                targetValue = 300f, // 애니메이션의 최종 위치
+                                animationSpec = tween(durationMillis = 1000 + index * 200)
+                            )
+                        }
                         gameInProgress = false
                     }
-                    gameInProgress = true
                 }
             },
             modifier = Modifier
@@ -149,117 +143,52 @@ fun LadderGameScreen(
 
 @Composable
 fun DrawPlayers(playerCount: Int, shuffledPlayerNames: List<String>) {
-    for (i in 0 until playerCount) {
-        Box(
-            modifier = Modifier
-                .padding(5.dp)
-                .background(Color.Red, shape = RoundedCornerShape(8.dp))
-                .padding(8.dp)
-        ) {
-            Text(
-                text = shuffledPlayerNames.getOrElse(i) { "" },
-                color = Color.Black,
-                fontSize = 16.sp,
-                modifier = Modifier.align(Alignment.Center)
-            )
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween // 균등한 간격 유지
+    ) {
+        for (i in 0 until playerCount) {
+            Box(
+                modifier = Modifier
+                    .background(Color.Red, shape = RoundedCornerShape(8.dp))
+                    .padding(8.dp)
+            ) {
+                Text(
+                    text = shuffledPlayerNames.getOrElse(i) { "" },
+                    color = Color.Black,
+                    fontSize = 16.sp,
+                    modifier = Modifier.align(Alignment.Center)
+                )
+            }
         }
     }
 }
 
 @Composable
 fun DrawWinners(playerCount: Int, shuffledWinnerTitles: List<String>) {
-    for (i in 0 until playerCount) {
-        Box(
-            modifier = Modifier
-                .padding(5.dp)
-                .background(Color.Red, shape = RoundedCornerShape(8.dp))
-                .padding(8.dp)
-        ) {
-            Text(
-                text = shuffledWinnerTitles.getOrElse(i) { "꽝" },
-                color = Color.Black,
-                fontSize = 16.sp,
-                modifier = Modifier.align(Alignment.Center)
-            )
-        }
-    }
-}
-
-suspend fun generateLadderData(playerCount: Int): List<List<LadderLine>> = withContext(Dispatchers.Default) {
-    val ladderData = mutableListOf<List<LadderLine>>()
-    val ladderWidth = 1f / (playerCount + 1)
-    val stepHeight = 1f / 11  // 총 11개 구간으로 나눔
-    val random = Random()
-
-    // List to store horizontal lines for each column
-    val horizontalLinesForEachColumn = MutableList(playerCount) { mutableSetOf<Int>() }
-
-    // Generate horizontal lines for each column
-    for (i in 0 until playerCount - 1) { // 마지막 세로줄에서는 가로줄을 그리지 않음
-        val x = (i + 1) * ladderWidth
-
-        // Check previous column's horizontal lines
-        val previousHorizontalLines = horizontalLinesForEachColumn.getOrNull(i - 1) ?: emptySet()
-
-        // Generate random number of horizontal lines (1 to 9)
-        val horizontalLineCount = random.nextInt(9) + 1
-        val horizontalLines = mutableSetOf<Int>()
-
-        // Generate unique y coordinates for horizontal lines
-        while (horizontalLines.size < horizontalLineCount) {
-            val y = random.nextInt(10) + 1 // 1 to 10
-            // Check if y coordinate is already used by the previous column's lines
-            val overlapping = previousHorizontalLines.any { it == y }
-            if (!overlapping) {
-                horizontalLines.add(y)
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween // 균등한 간격 유지
+    ) {
+        for (i in 0 until playerCount) {
+            Box(
+                modifier = Modifier
+                    .background(Color.Red, shape = RoundedCornerShape(8.dp))
+                    .padding(8.dp)
+            ) {
+                Text(
+                    text = shuffledWinnerTitles.getOrElse(i) { "꽝" },
+                    color = Color.Black,
+                    fontSize = 16.sp,
+                    modifier = Modifier.align(Alignment.Center)
+                )
             }
         }
-
-        // Add generated horizontal lines to ladderLines
-        val columnLadderLines = mutableListOf<LadderLine>()
-        for (line in horizontalLines) {
-            val y = line * stepHeight
-            columnLadderLines.add(LadderLine(Offset(x, y), Offset(x + ladderWidth, y)))
-            horizontalLinesForEachColumn[i].add(line)
-        }
-        ladderData.add(columnLadderLines)
     }
-
-    // Generate vertical lines
-    for (i in 0 until playerCount) {
-        val x = (i + 1) * ladderWidth
-        ladderData.add(listOf(LadderLine(Offset(x, 0f), Offset(x, 1f))))
-    }
-
-    return@withContext ladderData
 }
 
-fun DrawScope.drawLadder(animatedValue: Float, ladderLines: List<LadderLine>) {
-    val stroke = Stroke(4.dp.toPx())
-    val ladderHeight = size.height
-    val animatedHeight = ladderHeight * animatedValue
-
-    // Draw ladder lines from precomputed data
-    ladderLines.forEach { line ->
-        val start = Offset(line.start.x * size.width, line.start.y * ladderHeight)
-        val end = Offset(line.end.x * size.width, line.end.y * ladderHeight)
-
-        drawLine(
-            Color.White,
-            start = start,
-            end = end,
-            strokeWidth = stroke.width
-        )
-
-        if (line.start.y == 0f && line.end.y == 1f) {
-            // Draw animated red line for vertical lines
-            val animatedEnd = Offset(line.end.x * size.width, animatedHeight)
-            drawLine(
-                Color.Red,
-                start = start,
-                end = animatedEnd,
-                strokeWidth = stroke.width
-            )
-        }
-    }
+@Composable
+fun shouldDrawHorizontalLine(columnIndex: Int, rowIndex: Int): Boolean {
+    // 임의의 로직으로 수평 막대를 그릴지 여부 결정 (예: 특정 열과 행에서만 그리기)
+    return (columnIndex % 2 == 0 && rowIndex % 3 == 0)
 }
