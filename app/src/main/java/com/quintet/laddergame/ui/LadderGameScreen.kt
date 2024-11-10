@@ -37,7 +37,6 @@ import com.quintet.laddergame.bean.LadderLine
 import com.quintet.laddergame.bean.Player
 import com.quintet.laddergame.bean.Winner
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlin.random.Random
@@ -61,29 +60,27 @@ fun LadderGameScreen(
     val scope = rememberCoroutineScope()
 
     var ladderData by remember { mutableStateOf<List<List<LadderLine>>>(emptyList()) }
+    var isLoading by remember { mutableStateOf(true) }
 
     LaunchedEffect(playerInfo.playerCount) {
-        // Flow를 통해 ladderData를 비동기적으로 가져오기
-        val flowResult = flow {
-            emit(generateLadderData(playerInfo.playerCount))
+        // 비동기적으로 사다리 데이터를 가져옴
+        ladderData = withContext(Dispatchers.Default) {
+            generateLadderData(playerInfo.playerCount)
         }
-
-        // collect 함수를 사용하여 Flow의 데이터를 받아옴
-        flowResult.collect { newData ->
-            ladderData = newData
-        }
+        isLoading = false
     }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .padding(vertical = 20.dp)
             .background(Color.Black),
         verticalArrangement = Arrangement.Center
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 20.dp),
+                .padding(horizontal = 20.dp),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
             DrawPlayers(playerInfo.playerCount, shuffledPlayerNames)
@@ -91,7 +88,7 @@ fun LadderGameScreen(
 
         Spacer(modifier = Modifier.height(gameElementsPadding)) // 세로 요소 간 간격
 
-        if (ladderData.isEmpty()) {
+        if (isLoading) {
             // 로딩 중일 때 보여질 로딩 바
             CircularProgressIndicator(
                 modifier = Modifier
@@ -116,7 +113,7 @@ fun LadderGameScreen(
 
         Row(
             modifier = Modifier
-                .fillMaxWidth(),
+                .fillMaxWidth().padding(horizontal = 20.dp),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
             DrawWinners(playerInfo.playerCount, shuffledWinnerTitles)
@@ -152,7 +149,6 @@ fun DrawPlayers(playerCount: Int, shuffledPlayerNames: List<String>) {
     for (i in 0 until playerCount) {
         Box(
             modifier = Modifier
-                .padding(5.dp)
                 .background(Color.Red, shape = RoundedCornerShape(8.dp))
                 .padding(8.dp)
         ) {
@@ -171,7 +167,6 @@ fun DrawWinners(playerCount: Int, shuffledWinnerTitles: List<String>) {
     for (i in 0 until playerCount) {
         Box(
             modifier = Modifier
-                .padding(5.dp)
                 .background(Color.Red, shape = RoundedCornerShape(8.dp))
                 .padding(8.dp)
         ) {
@@ -185,7 +180,7 @@ fun DrawWinners(playerCount: Int, shuffledWinnerTitles: List<String>) {
     }
 }
 
-suspend fun generateLadderData(playerCount: Int): List<List<LadderLine>> = withContext(Dispatchers.Default) {
+fun generateLadderData(playerCount: Int): List<List<LadderLine>> {
     val ladderData = mutableListOf<List<LadderLine>>()
     val ladderWidth = 1f / (playerCount + 1)
     val stepHeight = 1f / 11  // 총 11개 구간으로 나눔
@@ -194,28 +189,26 @@ suspend fun generateLadderData(playerCount: Int): List<List<LadderLine>> = withC
     // List to store horizontal lines for each column
     val horizontalLinesForEachColumn = MutableList(playerCount) { mutableSetOf<Int>() }
 
-    // Generate horizontal lines for each column
-    for (i in 0 until playerCount - 1) { // 마지막 세로줄에서는 가로줄을 그리지 않음
+    // 세로줄마다 가로줄을 생성하는 부분 최적화
+    for (i in 0 until playerCount - 1) {
         val x = (i + 1) * ladderWidth
 
-        // Check previous column's horizontal lines
+        // 이전 세로줄과 겹치지 않도록 랜덤한 가로줄 생성
         val previousHorizontalLines = horizontalLinesForEachColumn.getOrNull(i - 1) ?: emptySet()
 
-        // Generate random number of horizontal lines (1 to 9)
-        val horizontalLineCount = random.nextInt(9) + 1
+        // 1~5개 가로줄을 랜덤하게 생성
+        val horizontalLineCount = random.nextInt(5) + 1
         val horizontalLines = mutableSetOf<Int>()
 
-        // Generate unique y coordinates for horizontal lines
+        // 중복을 최소화하는 방식으로 가로줄 생성
         while (horizontalLines.size < horizontalLineCount) {
-            val y = random.nextInt(10) + 1 // 1 to 10
-            // Check if y coordinate is already used by the previous column's lines
-            val overlapping = previousHorizontalLines.any { it == y }
-            if (!overlapping) {
+            val y = random.nextInt(10) + 1
+            if (!previousHorizontalLines.contains(y)) {
                 horizontalLines.add(y)
             }
         }
 
-        // Add generated horizontal lines to ladderLines
+        // 생성된 가로줄을 ladderData에 추가
         val columnLadderLines = mutableListOf<LadderLine>()
         for (line in horizontalLines) {
             val y = line * stepHeight
@@ -225,13 +218,13 @@ suspend fun generateLadderData(playerCount: Int): List<List<LadderLine>> = withC
         ladderData.add(columnLadderLines)
     }
 
-    // Generate vertical lines
+    // 세로줄 추가 (플레이어마다 한 개의 세로줄)
     for (i in 0 until playerCount) {
         val x = (i + 1) * ladderWidth
         ladderData.add(listOf(LadderLine(Offset(x, 0f), Offset(x, 1f))))
     }
 
-    return@withContext ladderData
+    return ladderData
 }
 
 fun DrawScope.drawLadder(animatedValue: Float, ladderLines: List<LadderLine>) {
