@@ -107,59 +107,6 @@ fun LadderGameScreen(
                     .padding(horizontal = gameElementsPadding)
             ) {
                 drawLadder(ladderData)
-
-                // 첫 번째 가로줄의 y 값 찾기
-                val firstHorizontalLineY = ladderData.filter { it.horizontal != null }
-                    .minByOrNull { it.horizontal?.start?.y ?: Float.MAX_VALUE }
-                    ?.horizontal?.start?.y ?: 0f
-
-                // 사다리 추적
-                ladderData.filter { it.vertical != null }.forEach { line ->
-                    line.vertical?.let {
-                        val startX = it.start.x * size.width
-                        val startY = it.start.y * size.height
-                        val endY = it.end.y * size.height
-
-                        // 세로줄 애니메이션 (y축으로 이동)
-                        val animatedEndY = startY + (firstHorizontalLineY * size.height - startY) * animatedPosition.value
-
-                        val start = Offset(startX, startY)
-                        val end = Offset(startX, animatedEndY)
-
-                        drawLine(
-                            Color.Red,
-                            start = start,
-                            end = end,
-                            strokeWidth = 6.dp.toPx() // 세로줄의 두께를 설정
-                        )
-
-                        if (animatedPosition.value >= 1f) {
-                            // 첫 번째 가로줄의 x 위치 계산
-                            val firstHorizontalLineX = ladderData.filter { it.horizontal != null }
-                                .minByOrNull { it.horizontal?.start?.x ?: Float.MAX_VALUE }
-                                ?.horizontal?.start?.x ?: 0f
-
-                            // 첫 번째 가로줄 x 좌표로 이동
-                            val animatedEndX = firstHorizontalLineX * size.width // 첫 번째 가로줄의 실제 x 위치
-
-                            // x 축 애니메이션 (세로줄의 startX에서 첫 번째 가로줄까지 이동)
-                            val animatedStartX = startX + (animatedEndX - startX) * (animatedPosition.value - 1f)
-
-                            // y 값은 고정되고, x 값만 변경
-                            val horizontalStart = Offset(animatedStartX, animatedEndY)
-                            val horizontalEnd = Offset(animatedEndX, animatedEndY) // 끝 지점의 x 값은 animatedEndX로 설정
-
-                            // 가로줄 그리기
-                            drawLine(
-                                Color.Red,
-                                start = horizontalStart,
-                                end = horizontalEnd,
-                                strokeWidth = 6.dp.toPx() // 가로줄의 두께를 설정
-                            )
-                        }
-
-                    }
-                }
             }
         }
 
@@ -275,7 +222,16 @@ fun generateLadderData(playerCount: Int): List<LadderLine> {
     // 세로줄 추가 (플레이어마다 한 개의 세로줄)
     for (i in 0 until playerCount) {
         val x = (i + 1) * ladderWidth
-        ladderData.add(LadderLine(vertical = VerticalLine(Offset(x, 0f), Offset(x, 1f))))
+        val startPoint = Offset(x, 0f)
+        val endPoint = Offset(x, 1f)
+
+        // 세로줄과 함께 startPoint와 endPoint를 설정하여 추가
+        ladderData.add(LadderLine(
+            playerIndex = i,  // 각 플레이어 인덱스
+            vertical = VerticalLine(start = startPoint, end = endPoint),
+            startPoint = startPoint,
+            endPoint = endPoint
+        ))
     }
 
     return ladderData

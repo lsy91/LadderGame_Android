@@ -10,8 +10,11 @@ import androidx.compose.ui.geometry.Offset
  */
 @Keep
 data class LadderLine(
+    val playerIndex: Int? = null, // 각 플레이어의 인덱스
+    val startPoint: Offset? = null,  // 각 플레이어별 vertical startPoint
+    val endPoint: Offset? = null,     // 각 플레이어별 vertical endPoint
     val vertical: VerticalLine? = null,  // 세로줄
-    val horizontal: HorizontalLine? = null // 가로줄
+    val horizontal: HorizontalLine? = null, // 가로줄
 )
 
 // 세로줄을 나타내는 데이터 클래스
