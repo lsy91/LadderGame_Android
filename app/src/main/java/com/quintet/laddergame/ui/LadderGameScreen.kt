@@ -1,5 +1,6 @@
 package com.quintet.laddergame.ui
 
+import android.util.Log
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
@@ -62,7 +63,7 @@ fun LadderGameScreen(
     var ladderData by remember { mutableStateOf<List<List<LadderLine>>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
 
-    LaunchedEffect(playerInfo.playerCount) {
+    LaunchedEffect(Unit) {
         // 비동기적으로 사다리 데이터를 가져옴
         ladderData = withContext(Dispatchers.Default) {
             generateLadderData(playerInfo.playerCount)
@@ -103,9 +104,7 @@ fun LadderGameScreen(
                     .fillMaxWidth()
                     .padding(horizontal = gameElementsPadding)
             ) {
-                ladderData.forEach { column ->
-                    drawLadder(animatedPosition.value, column)
-                }
+                drawLadder(animatedPosition.value, ladderData)
             }
         }
 
@@ -227,32 +226,36 @@ fun generateLadderData(playerCount: Int): List<List<LadderLine>> {
     return ladderData
 }
 
-fun DrawScope.drawLadder(animatedValue: Float, ladderLines: List<LadderLine>) {
+fun DrawScope.drawLadder(animatedValue: Float, ladderData: List<List<LadderLine>>) {
     val stroke = Stroke(4.dp.toPx())
     val ladderHeight = size.height
     val animatedHeight = ladderHeight * animatedValue
 
+    Log.e("sy.lee", ladderData.toString())
+
     // Draw ladder lines from precomputed data
-    ladderLines.forEach { line ->
-        val start = Offset(line.start.x * size.width, line.start.y * ladderHeight)
-        val end = Offset(line.end.x * size.width, line.end.y * ladderHeight)
+    ladderData.forEach { ladderLines ->
+        ladderLines.forEach { line ->
+            val start = Offset(line.start.x * size.width, line.start.y * ladderHeight)
+            val end = Offset(line.end.x * size.width, line.end.y * ladderHeight)
 
-        drawLine(
-            Color.White,
-            start = start,
-            end = end,
-            strokeWidth = stroke.width
-        )
-
-        if (line.start.y == 0f && line.end.y == 1f) {
-            // Draw animated red line for vertical lines
-            val animatedEnd = Offset(line.end.x * size.width, animatedHeight)
             drawLine(
-                Color.Red,
+                Color.White,
                 start = start,
-                end = animatedEnd,
+                end = end,
                 strokeWidth = stroke.width
             )
+
+//        if (line.start.y == 0f && line.end.y == 1f) {
+//            // Draw animated red line for vertical lines
+//            val animatedEnd = Offset(line.end.x * size.width, animatedHeight)
+//            drawLine(
+//                Color.Red,
+//                start = start,
+//                end = animatedEnd,
+//                strokeWidth = stroke.width
+//            )
+//        }
         }
     }
 }
