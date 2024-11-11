@@ -22,6 +22,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -71,6 +72,24 @@ fun LadderGameScreen(
         isLoading = false
     }
 
+    // 사다리 이동 경로를 추적할 수 있는 Player의 초기 위치와 최종 위치를 저장
+    val playerPositions = remember { mutableStateListOf<Float>() }
+
+    LaunchedEffect(animatedPosition.value) {
+        // 애니메이션 진행 중에 빨간색 선이 세로줄을 따라 이동하도록 경로 추적
+        playerPositions.clear()
+        ladderData.forEach { ladderLines ->
+            ladderLines.forEach { line ->
+                // 세로줄을 찾으면, 해당 세로줄을 따라 이동
+                if (line.start.x == line.end.x && line.start.y == 0f && line.end.y == 1f) {
+                    val playerPosition = animatedPosition.value
+                    // playerPosition을 사용하여 이동 경로를 계산하고 저장
+                    playerPositions.add(playerPosition)
+                }
+            }
+        }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -104,7 +123,33 @@ fun LadderGameScreen(
                     .fillMaxWidth()
                     .padding(horizontal = gameElementsPadding)
             ) {
-                drawLadder(animatedPosition.value, ladderData)
+                drawLadder(ladderData)
+
+                // 이동 경로 그리기 (빨간색 선)
+                playerPositions.forEach { position ->
+                    // 애니메이션된 Y 좌표
+                    val animatedHeight = size.height * position
+
+                    // 각 플레이어의 이동 경로를 따라 세로줄을 찾기
+                    ladderData.forEach { ladderLines ->
+                        ladderLines.forEach { line ->
+                            // 세로줄만 추적
+                            if (line.start.x == line.end.x) { // 세로줄을 확인
+                                // 세로줄에 해당하는 경우, 빨간색 선을 그린다.
+                                val playerLineStart = Offset(line.start.x * size.width, 0f) // 세로줄의 시작 위치
+                                val playerLineEnd = Offset(line.end.x * size.width, animatedHeight) // 세로줄의 끝 위치
+
+                                drawLine(
+                                    Color.Red,
+                                    start = playerLineStart,
+                                    end = playerLineEnd,
+                                    strokeWidth = 4.dp.toPx()
+                                )
+                            }
+                        }
+                    }
+                }
+
             }
         }
 
@@ -226,10 +271,9 @@ fun generateLadderData(playerCount: Int): List<List<LadderLine>> {
     return ladderData
 }
 
-fun DrawScope.drawLadder(animatedValue: Float, ladderData: List<List<LadderLine>>) {
+fun DrawScope.drawLadder(ladderData: List<List<LadderLine>>) {
     val stroke = Stroke(4.dp.toPx())
     val ladderHeight = size.height
-    val animatedHeight = ladderHeight * animatedValue
 
     Log.e("sy.lee", ladderData.toString())
 
@@ -245,17 +289,6 @@ fun DrawScope.drawLadder(animatedValue: Float, ladderData: List<List<LadderLine>
                 end = end,
                 strokeWidth = stroke.width
             )
-
-//        if (line.start.y == 0f && line.end.y == 1f) {
-//            // Draw animated red line for vertical lines
-//            val animatedEnd = Offset(line.end.x * size.width, animatedHeight)
-//            drawLine(
-//                Color.Red,
-//                start = start,
-//                end = animatedEnd,
-//                strokeWidth = stroke.width
-//            )
-//        }
         }
     }
 }
