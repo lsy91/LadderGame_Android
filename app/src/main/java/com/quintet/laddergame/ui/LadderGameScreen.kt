@@ -41,8 +41,8 @@ import com.quintet.laddergame.bean.PlayerGameInfo
 import com.quintet.laddergame.bean.VerticalLine
 import com.quintet.laddergame.bean.Winner
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlin.random.Random
 
 /**
@@ -69,17 +69,12 @@ fun LadderGameScreen(
 
     LaunchedEffect(playerInfo.playerCount) {
         // ladderData를 비동기로 생성
-        val ladderDataDeferred = async(Dispatchers.Default) {
+        ladderData = withContext(Dispatchers.Default) {
             generateLadderData(playerInfo.playerCount)
         }
 
-        // ladderData가 완료된 후 결과를 사용하여 playerData 생성
-        ladderData = ladderDataDeferred.await() // ladderData 생성이 완료될 때까지 기다림
-        val playerDataDeferred = async(Dispatchers.Default) {
-            generatePlayerGameInfo(ladderData)
-        }
-
-        playerGameInfo = playerDataDeferred.await() // playerData 생성이 완료될 때까지 기다림
+        // ladderData가 완료된 후 결과를 사용하여 playerGameInfo 생성
+        playerGameInfo = generatePlayerGameInfo(ladderData)
 
         isLoading = false
     }
@@ -119,8 +114,14 @@ fun LadderGameScreen(
             ) {
                 drawLadder(ladderData)
 
-                Log.e("sy.lee", ladderData.toString())
+                val horizontalLines = ladderData.filter { it.horizontal != null }
+                val verticalLines = ladderData.filter { it.vertical != null }
+
+                Log.e("sy.lee[horizontal lines]", horizontalLines.toString())
+                Log.e("sy.lee[vertical lines]", verticalLines.toString())
                 Log.e("sy.lee", playerGameInfo.toString())
+
+                calculatePlayerPaths(horizontalLines = horizontalLines, verticalLines = verticalLines, playersInfo = playerGameInfo)
             }
         }
 
@@ -160,6 +161,63 @@ fun LadderGameScreen(
         }
     }
 }
+
+fun calculatePlayerPaths(
+    horizontalLines: List<LadderLine>,
+    verticalLines: List<LadderLine>,
+    playersInfo: List<PlayerGameInfo>
+) {
+    // 각 플레이어에 대해 경로 계산
+    playersInfo.forEach { player ->
+        var currentPosition = player.startPoint
+        val playerPath = mutableListOf<Offset?>()
+        playerPath.add(currentPosition)
+
+        while (currentPosition?.y!! < 1f) {
+            // 가로선을 검사하여 현재 위치에서 이동할 위치를 찾음
+            val nextHorizontalLine = horizontalLines.firstOrNull { line ->
+                line.horizontal?.let { horizontalLine ->
+                    // 현재 위치의 y좌표와 가로선의 y좌표가 동일한지 확인
+                    horizontalLine.start.y == currentPosition?.y && (
+                            (horizontalLine.start.x == currentPosition?.x) || (horizontalLine.end.x == currentPosition?.x)
+                            )
+                } != null
+            }?.horizontal
+
+            if (nextHorizontalLine != null) {
+                // 현재 위치의 x 좌표를 바꿈 (가로선 따라 이동)
+                currentPosition = if (currentPosition.x == nextHorizontalLine.start.x) {
+                    nextHorizontalLine.end
+                } else {
+                    nextHorizontalLine.start
+                }
+                playerPath.add(currentPosition)
+            } else {
+                // 더 이상 이동할 가로선이 없으면, 세로선을 따라 아래로 이동
+                val nextVerticalStep = verticalLines
+                    .filter {
+                        it.vertical?.let { verticalLine ->
+                            verticalLine.start.x == currentPosition?.x && verticalLine.start.y > currentPosition?.y!!
+                        } != null
+                    }
+                    .minByOrNull { it.vertical?.start?.y ?: Float.MAX_VALUE }
+                    ?.vertical?.end
+
+                if (nextVerticalStep != null) {
+                    currentPosition = nextVerticalStep
+                    playerPath.add(currentPosition)
+                } else {
+                    // 경로 계산을 완료하고 종료
+                    break
+                }
+            }
+        }
+
+        // 경로 출력 또는 저장
+        Log.e("[sy.lee] Player ${player.playerIndex} Path", playerPath.toString())
+    }
+}
+
 
 @Composable
 fun DrawPlayers(playerCount: Int, shuffledPlayerNames: List<String>) {
