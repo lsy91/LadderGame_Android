@@ -5,6 +5,7 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -61,21 +62,52 @@ fun LadderGameScreen(
     val gameElementsPadding = 16.dp
 
     var gameInProgress by remember { mutableStateOf(false) }
-    val animatedPosition = remember { Animatable(0f) }
+    val animatedX = remember { Animatable(0f) }  // x 애니메이션
+    val animatedY = remember { Animatable(0f) }  // y 애니메이션
     val scope = rememberCoroutineScope()
 
-    var ladderData by remember { mutableStateOf<List<LadderLine>>(emptyList()) }
+    val ladderData = remember { mutableStateOf<List<LadderLine>>(emptyList()) }
     var playerGameInfo by remember { mutableStateOf<List<PlayerGameInfo>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
 
+    // 선택된 플레이어 경로를 저장할 상태
+    var selectedPlayerPath by remember { mutableStateOf<List<Offset>?>(null) }
+    var isAnimating by remember { mutableStateOf(false) }
+
+    // 선택된 플레이어 경로에 따른 애니메이션 처리
+    selectedPlayerPath?.let { path ->
+        if (isAnimating) {
+            // 애니메이션이 진행 중일 때는 플레이어가 이동하는 것을 그리기
+            LaunchedEffect(path) {
+
+                // 경로에서 첫 번째 위치를 시작점으로 설정
+                val startOffset = path.first()
+                animatedX.snapTo(startOffset.x)  // 초기 x 값 설정
+                animatedY.snapTo(startOffset.y)  // 초기 y 값 설정
+
+                // 경로에서 x, y 값을 애니메이션 진행
+                path.forEachIndexed { _, offset ->
+                    animatedX.animateTo(
+                        targetValue = offset.x,
+                        animationSpec = tween(durationMillis = 500)
+                    )
+                    animatedY.animateTo(
+                        targetValue = offset.y,
+                        animationSpec = tween(durationMillis = 500)
+                    )
+                }
+            }
+        }
+    }
+
     LaunchedEffect(playerInfo.playerCount) {
         // ladderData를 비동기로 생성
-        ladderData = withContext(Dispatchers.Default) {
+        ladderData.value = withContext(Dispatchers.Default) {
             generateLadderData(playerInfo.playerCount)
         }
 
         // ladderData가 완료된 후 결과를 사용하여 playerGameInfo 생성
-        playerGameInfo = generatePlayerGameInfo(ladderData)
+        playerGameInfo = generatePlayerGameInfo(ladderData.value)
 
         isLoading = false
     }
@@ -93,7 +125,20 @@ fun LadderGameScreen(
                 .padding(horizontal = 20.dp),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            DrawPlayers(playerInfo.playerCount, shuffledPlayerNames)
+            DrawPlayers(
+                playerCount = playerInfo.playerCount,
+                shuffledPlayerNames = shuffledPlayerNames,
+                onPlayerSelected = { index ->
+                    // 플레이어가 클릭되었을 때 해당 플레이어 경로를 설정
+                    val path = playerGameInfo.getOrNull(index)?.let {
+                        calculatePlayerPathForIndex(index, ladderData.value, playerGameInfo)
+                    }
+                    if (path != null) {
+                        selectedPlayerPath = path
+                        isAnimating = true
+                    }
+                }
+            )
         }
 
         Spacer(modifier = Modifier.height(gameElementsPadding)) // 세로 요소 간 간격
@@ -113,9 +158,21 @@ fun LadderGameScreen(
                     .fillMaxWidth()
                     .padding(horizontal = gameElementsPadding)
             ) {
-                drawLadder(ladderData)
+                // ladderDrawn이 true 일 때만 사다리를 그리도록 함
+                drawLadder(ladderData.value)
 
-                calculatePlayerPaths(ladderData = ladderData, playersInfo = playerGameInfo)
+                // 애니메이션을 그릴 플레이어의 경로
+                selectedPlayerPath?.let {
+                    // 경로에 따라 애니메이션된 위치 그리기
+                    drawCircle(
+                        color = Color.Red,
+                        radius = 30f,
+                        center = Offset(
+                            x = animatedX.value * size.width,  // x 값 애니메이션
+                            y = animatedY.value * size.height  // y 값 애니메이션
+                        )
+                    )
+                }
             }
         }
 
@@ -136,9 +193,14 @@ fun LadderGameScreen(
                 if (!gameInProgress) {
                     scope.launch {
                         // 애니메이션 초기화
-                        animatedPosition.snapTo(0f)
+                        animatedX.snapTo(0f)
+                        animatedY.snapTo(0f)
                         // 애니메이션 시작
-                        animatedPosition.animateTo(
+                        animatedX.animateTo(
+                            targetValue = 1f,  // 예시로 x, y가 모두 1로 끝까지 이동
+                            animationSpec = tween(durationMillis = 1000)
+                        )
+                        animatedY.animateTo(
                             targetValue = 1f,
                             animationSpec = tween(durationMillis = 1000)
                         )
@@ -156,64 +218,18 @@ fun LadderGameScreen(
     }
 }
 
-fun calculatePlayerPaths(
-    ladderData: List<LadderLine>,
-    playersInfo: List<PlayerGameInfo>
-) {
-    // ladderData 에서 이동 가능한 점들만 모은 리스트 생성 (중복 제거)
-    val canMovePointList = ladderData.flatMap { line ->
-        listOfNotNull(
-            line.horizontal?.start,
-            line.horizontal?.end,
-            line.vertical?.start,
-            line.vertical?.end
-        )
-    }.distinct()
-
-    // 각 플레이어에 대해 경로 계산
-    playersInfo.forEach { player ->
-        var currentPosition = player.startPoint
-        val playerPath = mutableListOf<Offset?>()
-        playerPath.add(currentPosition)
-
-        while (currentPosition?.y!! < 1f) {
-            // 다음 수직 이동할 점 찾기
-            val nextVerticalPoint = canMovePointList
-                .filter { it.x == currentPosition?.x && it.y > currentPosition?.y!! }
-                .minByOrNull { it.y - currentPosition?.y!! }
-
-            // 이동한 위치를 경로에 추가
-            playerPath.add(nextVerticalPoint)
-            currentPosition = nextVerticalPoint
-
-            // y 좌표가 1.0인 경우 이동 종료
-            if (currentPosition?.y == 1.0f) break
-
-            // 같은 y 좌표에 있는 다른 x 좌표의 점을 찾아서 수평 이동
-            val nextHorizontalPoint = canMovePointList
-                .filter { it.y == currentPosition?.y && it.x != currentPosition?.x }
-                .minByOrNull { abs(it.x - currentPosition?.x!!) }
-
-            // 수평 이동할 점이 있다면 이동
-            if (nextHorizontalPoint != null) {
-                playerPath.add(nextHorizontalPoint)
-                currentPosition = nextHorizontalPoint
-            }
-        }
-
-        // 경로 출력 또는 저장
-        Log.e("[sy.lee] Player ${player.playerIndex} Path", playerPath.toString())
-    }
-}
-
-
 @Composable
-fun DrawPlayers(playerCount: Int, shuffledPlayerNames: List<String>) {
+fun DrawPlayers(
+    playerCount: Int,
+    shuffledPlayerNames: List<String>,
+    onPlayerSelected: (Int) -> Unit // 플레이어가 선택되었을 때 콜백 추가
+) {
     for (i in 0 until playerCount) {
         Box(
             modifier = Modifier
                 .background(Color.Red, shape = RoundedCornerShape(8.dp))
                 .padding(8.dp)
+                .clickable { onPlayerSelected(i) } // 클릭 이벤트 처리
         ) {
             Text(
                 text = shuffledPlayerNames.getOrElse(i) { "" },
@@ -326,8 +342,6 @@ fun DrawScope.drawLadder(ladderData: List<LadderLine>) {
     val stroke = Stroke(4.dp.toPx())
     val ladderHeight = size.height
 
-    Log.e("[sy.lee] Ladder Data", ladderData.toString())
-
     // Draw ladder lines from precomputed data
     ladderData.forEach { line ->
         // 세로줄 그리기
@@ -366,4 +380,58 @@ fun DrawScope.drawLadder(ladderData: List<LadderLine>) {
             )
         }
     }
+}
+
+/**
+ * 플레이어별 이동경로
+ */
+fun calculatePlayerPathForIndex(
+    playerIndex: Int,
+    ladderData: List<LadderLine>,
+    playersInfo: List<PlayerGameInfo>
+): List<Offset>? {
+    // 해당 인덱스의 플레이어 정보를 가져와서 경로를 계산
+    val player = playersInfo.getOrNull(playerIndex) ?: return null
+
+    // 기존 경로 계산 로직을 재사용
+    val canMovePointList = ladderData.flatMap { line ->
+        listOfNotNull(
+            line.horizontal?.start,
+            line.horizontal?.end,
+            line.vertical?.start,
+            line.vertical?.end
+        )
+    }.distinct()
+
+    val path = mutableListOf<Offset>()
+    var currentPosition = player.startPoint
+    path.add(currentPosition!!)
+
+    while (currentPosition?.y!! < 1f) {
+        // 수직 이동 (y 값 증가)
+        val nextVerticalPoint = canMovePointList
+            .filter { it.x == currentPosition?.x && it.y > currentPosition?.y!! }
+            .minByOrNull { it.y - currentPosition?.y!! }
+
+        if (nextVerticalPoint != null) {
+            path.add(nextVerticalPoint)
+            currentPosition = nextVerticalPoint
+        }
+
+        if (currentPosition.y == 1.0f) break
+
+        // 수평 이동 (x 값 변화)
+        val nextHorizontalPoint = canMovePointList
+            .filter { it.y == currentPosition?.y && it.x != currentPosition?.x!! }
+            .minByOrNull { abs(it.x - currentPosition?.x!!) }
+
+        if (nextHorizontalPoint != null) {
+            path.add(nextHorizontalPoint)
+            currentPosition = nextHorizontalPoint
+        }
+    }
+
+    Log.e("sy.lee", path.toString())
+
+    return path
 }
