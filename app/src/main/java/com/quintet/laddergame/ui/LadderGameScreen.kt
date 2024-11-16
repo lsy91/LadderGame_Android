@@ -115,14 +115,7 @@ fun LadderGameScreen(
             ) {
                 drawLadder(ladderData)
 
-                val horizontalLines = ladderData.filter { it.horizontal != null }.map { it.horizontal }
-                val verticalLines = ladderData.filter { it.vertical != null }.map { it.vertical }
-
-                Log.e("sy.lee[horizontal lines]", horizontalLines.toString())
-                Log.e("sy.lee[vertical lines]", verticalLines.toString())
-                Log.e("sy.lee", playerGameInfo.toString())
-
-                calculatePlayerPaths(horizontalLines = horizontalLines, verticalLines = verticalLines, playersInfo = playerGameInfo)
+                calculatePlayerPaths(ladderData = ladderData, playersInfo = playerGameInfo)
             }
         }
 
@@ -164,105 +157,49 @@ fun LadderGameScreen(
 }
 
 fun calculatePlayerPaths(
-    horizontalLines: List<HorizontalLine?>,
-    verticalLines: List<VerticalLine?>,
+    ladderData: List<LadderLine>,
     playersInfo: List<PlayerGameInfo>
 ) {
+    // ladderData 에서 이동 가능한 점들만 모은 리스트 생성 (중복 제거)
+    val canMovePointList = ladderData.flatMap { line ->
+        listOfNotNull(
+            line.horizontal?.start,
+            line.horizontal?.end,
+            line.vertical?.start,
+            line.vertical?.end
+        )
+    }.distinct()
+
     // 각 플레이어에 대해 경로 계산
     playersInfo.forEach { player ->
         var currentPosition = player.startPoint
         val playerPath = mutableListOf<Offset?>()
         playerPath.add(currentPosition)
 
-        val nextHorizontalLines = mutableListOf<HorizontalLine?>()
+        while (currentPosition?.y!! < 1f) {
+            // 다음 수직 이동할 점 찾기
+            val nextVerticalPoint = canMovePointList
+                .filter { it.x == currentPosition?.x && it.y > currentPosition?.y!! }
+                .minByOrNull { it.y - currentPosition?.y!! }
 
-        horizontalLines.forEach { horizontalLine ->
-            if ((currentPosition?.x == horizontalLine?.start?.x && currentPosition?.y!! <= horizontalLine?.start?.y!!)
-                    || (currentPosition?.x == horizontalLine?.end?.x && currentPosition?.y!! <= horizontalLine?.end?.y!!)) {
-                nextHorizontalLines.add(horizontalLine)
+            // 이동한 위치를 경로에 추가
+            playerPath.add(nextVerticalPoint)
+            currentPosition = nextVerticalPoint
+
+            // y 좌표가 1.0인 경우 이동 종료
+            if (currentPosition?.y == 1.0f) break
+
+            // 같은 y 좌표에 있는 다른 x 좌표의 점을 찾아서 수평 이동
+            val nextHorizontalPoint = canMovePointList
+                .filter { it.y == currentPosition?.y && it.x != currentPosition?.x }
+                .minByOrNull { abs(it.x - currentPosition?.x!!) }
+
+            // 수평 이동할 점이 있다면 이동
+            if (nextHorizontalPoint != null) {
+                playerPath.add(nextHorizontalPoint)
+                currentPosition = nextHorizontalPoint
             }
         }
-
-        val nextHorizontalLine = nextHorizontalLines.filter { line ->
-            // currentPosition.x와 start.x 또는 end.x가 일치하는지 확인
-            line?.start?.x == currentPosition?.x || line?.end?.x == currentPosition?.x
-        }
-            .minByOrNull { line ->
-                // currentPosition.y와 start.y, end.y의 차이의 절대값 중 작은 값을 계산
-                val startDiff = abs(currentPosition?.y!! - line?.start?.y!!)
-                val endDiff = abs(currentPosition?.y!! - line.end.y)
-                minOf(startDiff, endDiff)
-            }
-
-        if (nextHorizontalLine != null) {
-            val nextHorizontalPoint =
-                if (currentPosition?.x == nextHorizontalLine.start.x) {
-                    nextHorizontalLine.start
-                } else if (currentPosition?.x == nextHorizontalLine.end.x) {
-                    nextHorizontalLine.end
-                } else {
-                    null
-                }
-
-            currentPosition = nextHorizontalPoint
-
-            playerPath.add(currentPosition)
-
-            if (currentPosition != null) {
-                currentPosition = if (nextHorizontalPoint == nextHorizontalLine.start) {
-                    nextHorizontalLine.end
-                } else {
-                    nextHorizontalLine.start
-                }
-
-                playerPath.add(currentPosition)
-            }
-
-        } else {
-
-        }
-
-
-
-
-
-//        while (currentPosition?.y!! < 1f) {
-//            // 가로선을 검사하여 현재 위치에서 이동할 위치를 찾음
-//            val nextHorizontalLine = horizontalLines.map { horizontalLine ->
-//                horizontalLine?.let { hLine ->
-//                    (currentPosition?.x == hLine.start.x && currentPosition?.y!! <= hLine.start.y)
-//                            || (currentPosition?.x == hLine.end.x && currentPosition?.y!! <= hLine.end.y)
-//                }
-//            }
-//
-//            if (nextHorizontalLine != null) {
-//                // 현재 위치의 x 좌표를 바꿈 (가로선 따라 이동)
-//                currentPosition = if (currentPosition.x == nextHorizontalLine.start.x) {
-//                    nextHorizontalLine.end
-//                } else {
-//                    nextHorizontalLine.start
-//                }
-//                playerPath.add(currentPosition)
-//            } else {
-//                // 더 이상 이동할 가로선이 없으면, 세로선을 따라 아래로 이동
-//                val nextVerticalStep = verticalLines
-//                    .filter {
-//                        it.vertical?.let { verticalLine ->
-//                            verticalLine.start.x == currentPosition?.x && verticalLine.start.y > currentPosition?.y!!
-//                        } != null
-//                    }
-//                    .minByOrNull { it.vertical?.start?.y ?: Float.MAX_VALUE }
-//                    ?.vertical?.end
-//
-//                if (nextVerticalStep != null) {
-//                    currentPosition = nextVerticalStep
-//                    playerPath.add(currentPosition)
-//                } else {
-//                    // 경로 계산을 완료하고 종료
-//                    break
-//                }
-//            }
-//        }
 
         // 경로 출력 또는 저장
         Log.e("[sy.lee] Player ${player.playerIndex} Path", playerPath.toString())
