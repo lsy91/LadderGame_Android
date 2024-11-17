@@ -82,7 +82,8 @@ fun LadderGameContent() {
 
                     val winnerInfo = Winner(
                         winnerCount = winnerCount,
-                        winnerPrizes = winnerTitles
+                        // 당첨 설정된 만큼을 제외하고, 플레이어 수 차이만큼 남는 Prize 요소는 "꽝" 으로 미리 만들어둔다. 그래야 그릴 때 shuffle 이 먹힌다.
+                        winnerPrizes = (winnerTitles + List((selectedPlayerInfo?.playerCount ?: 0) - winnerTitles.size) { "꽝" })
                     )
 
                     navController.navigate("LadderGameView"
