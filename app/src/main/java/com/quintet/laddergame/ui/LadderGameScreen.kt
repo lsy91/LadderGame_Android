@@ -1,6 +1,5 @@
 package com.quintet.laddergame.ui
 
-import android.util.Log
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
@@ -309,8 +308,6 @@ fun generateLadderData(playerCount: Int): List<LadderLine> {
         )
     }
 
-    Log.e("sy.lee", ladderData.toString())
-
     return ladderData
 }
 
@@ -413,13 +410,15 @@ fun calculatePlayerPathForIndex(
         // 수직 이동 (y 값 증가)
         val nextVerticalPoint = canMovePointList
             .filter {
-                // 소수점 첫번째 자리 이하를 버리고 비교
+                // y 축으로 소수점 네번째 자리 이하를 버리고 비교
+                // (플레이어가 많아질 경우 y 축 좌표값이 소수점 여섯째 자리까지 가므로, 그 오차를 감안)
                 floor(it.x * 10) == floor(currentPosition?.x!! * 10) &&
-                        floor(it.y * 10) > floor(currentPosition?.y!! * 10)
+                        floor(it.y * 1000) > floor(currentPosition?.y!! * 1000)
             }
             .minByOrNull {
-                // 소수점 첫번째 자리 이하를 버리고 차이를 계산
-                floor(it.y * 10) - floor(currentPosition?.y!! * 10)
+                // 소수점 네번째 자리 이하를 버리고 차이를 계산
+                // (플레이어가 많아질 경우 y 축 좌표값이 소수점 여섯째 자리까지 가므로, 그 오차를 감안)
+                floor(it.y * 1000) - floor(currentPosition?.y!! * 1000)
             }
 
         if (nextVerticalPoint != null) {
@@ -451,8 +450,6 @@ fun calculatePlayerPathForIndex(
             currentPosition = it
         }
     }
-
-    Log.e("sy.lee", path.toString())
 
     return path
 }
