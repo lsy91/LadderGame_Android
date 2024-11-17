@@ -10,18 +10,24 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
+import com.google.gson.reflect.TypeToken
+import com.quintet.laddergame.bean.Player
+import com.quintet.laddergame.bean.Winner
 import com.quintet.laddergame.ui.LadderGameScreen
 import com.quintet.laddergame.ui.SelectPlayerCountScreen
 import com.quintet.laddergame.ui.SelectWinnerCountScreen
 import com.quintet.laddergame.ui.theme.LadderGameTheme
-import java.util.ArrayList
+import com.quintet.laddergame.utils.LadderGameUtils
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         setContent {
             LadderGameTheme {
                 // A surface container using the 'background' color from the theme
@@ -51,52 +57,64 @@ fun LadderGameContent() {
             SelectPlayerCountScreen(
                 onSelectedPlayerInfo = { playerCount, playerNames ->
 
-                    val currentBackStackEntry = navController.currentBackStackEntry
-                    val args = currentBackStackEntry?.arguments ?: Bundle()
-                    args.apply {
-                        putInt("playerCount", playerCount)
-                        putStringArrayList("playerNames", playerNames as? ArrayList<String> ?: arrayListOf())
-                    }
+                    val playerInfo = Player(
+                        playerCount = playerCount,
+                        playerNames = playerNames
+                    )
 
                     // 당첨 수 화면으로 이동
-                    navController.navigate("SelectWinnerCount")
+                    navController.navigate("SelectWinnerCount" + "/" + "${LadderGameUtils.convertObjToJSON(playerInfo)}")
                 }
             )
         }
-        composable("SelectWinnerCount") { navBackStackEntry ->
-            val playerCount = navBackStackEntry.arguments?.getInt("playerCount") ?: 0
-            val playerNames = navBackStackEntry.arguments?.getStringArrayList("playerNames") ?: arrayListOf<String>()
+
+        composable(
+            route = "SelectWinnerCount" + "/" + "{playerInfo}",
+            arguments = listOf( navArgument("playerInfo") { type = NavType.StringType; defaultValue = ""} )
+        ) { navBackStackEntry ->
+
+            val playerInfoJson = navBackStackEntry.arguments?.getString("playerInfo")
+            val playerInfoToken = object : TypeToken<Player>() {}.type
+            val selectedPlayerInfo = LadderGameUtils.convertJSONToObj<Player>(playerInfoJson, playerInfoToken)
 
             SelectWinnerCountScreen(
-                playerCount = playerCount,
+                playerCount = selectedPlayerInfo?.playerCount ?: 0,
                 onSelectedGameInfo = { winnerCount, winnerTitles ->
 
-                    val currentBackStackEntry = navController.currentBackStackEntry
-                    val args = currentBackStackEntry?.arguments ?: Bundle()
-                    args.apply {
-                        putInt("playerCount", playerCount)
-                        putStringArrayList("playerNames", playerNames)
-                        putInt("winnerCount", winnerCount)
-                        putStringArrayList("winnerTitles", winnerTitles as? ArrayList<String> ?: arrayListOf())
-                    }
+                    val winnerInfo = Winner(
+                        winnerCount = winnerCount,
+                        // 당첨 설정된 만큼을 제외하고, 플레이어 수 차이만큼 남는 Prize 요소는 "꽝" 으로 미리 만들어둔다. 그래야 그릴 때 shuffle 이 먹힌다.
+                        winnerPrizes = (winnerTitles + List((selectedPlayerInfo?.playerCount ?: 0) - winnerTitles.size) { "꽝" })
+                    )
 
-                    navController.navigate("LadderGameView")
+                    navController.navigate("LadderGameView"
+                            + "/"
+                            + "${LadderGameUtils.convertObjToJSON(selectedPlayerInfo)}"
+                            + "/"
+                            + "${LadderGameUtils.convertObjToJSON(winnerInfo)}")
                 }
             )
         }
-        composable("LadderGameView") { navBackStackEntry ->
 
-            val playerCount = navBackStackEntry.arguments?.getInt("playerCount") ?: 0
-            val playerNames = navBackStackEntry.arguments?.getStringArrayList("playerNames") ?: arrayListOf<String>()
-            val winnerCount = navBackStackEntry.arguments?.getInt("winnerCount") ?: 0
-            val winnerTitles = navBackStackEntry.arguments?.getStringArrayList("winnerTitles") ?: arrayListOf<String>()
+        composable(
+            route = "LadderGameView" + "/" + "{playerInfo}" + "/" + "{winnerInfo}",
+            arguments = listOf(
+                navArgument("playerInfo") { type = NavType.StringType; defaultValue = ""},
+                navArgument("winnerInfo") { type = NavType.StringType; defaultValue = ""},
+            )
+        ) { navBackStackEntry ->
+
+            val playerInfoJson = navBackStackEntry.arguments?.getString("playerInfo")
+            val playerInfoToken = object : TypeToken<Player>() {}.type
+            val selectedPlayerInfo = LadderGameUtils.convertJSONToObj<Player>(playerInfoJson, playerInfoToken)
+
+            val winnerInfoJson = navBackStackEntry.arguments?.getString("winnerInfo")
+            val winnerInfoToken = object : TypeToken<Winner>() {}.type
+            val selectedWinnerInfo = LadderGameUtils.convertJSONToObj<Winner>(winnerInfoJson, winnerInfoToken)
 
             LadderGameScreen(
-                navController = navController,
-                playerCount = playerCount,
-                playerNames = playerNames,
-                winnerCount = winnerCount,
-                winnerTitles = winnerTitles
+                playerInfo = selectedPlayerInfo ?: Player(),
+                winnerInfo = selectedWinnerInfo ?: Winner()
             )
         }
     }

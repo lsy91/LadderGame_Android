@@ -32,14 +32,10 @@ private val DarkColors = darkColorScheme(
 
 @Composable
 fun LadderGameTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
+    darkTheme: Boolean = isSystemInDarkTheme(), // 기기가 다크모드인지 여부
     content: @Composable () -> Unit
 ) {
-    val colors = if (darkTheme) {
-        DarkColors
-    } else {
-        LightColors
-    }
+    val colors = DarkColors
 
     MaterialTheme(
         colorScheme = colors,
