@@ -44,7 +44,7 @@ import com.quintet.laddergame.bean.Winner
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import kotlin.math.abs
+import kotlin.math.floor
 import kotlin.random.Random
 
 /**
@@ -86,13 +86,13 @@ fun LadderGameScreen(
                 animatedY.snapTo(startOffset.y)  // 초기 y 값 설정
 
                 // 경로에서 x, y 값을 애니메이션 진행
-                path.forEachIndexed { _, offset ->
+                path.forEach { pathPoint ->
                     animatedX.animateTo(
-                        targetValue = offset.x,
+                        targetValue = pathPoint.x,
                         animationSpec = tween(durationMillis = 500)
                     )
                     animatedY.animateTo(
-                        targetValue = offset.y,
+                        targetValue = pathPoint.y,
                         animationSpec = tween(durationMillis = 500)
                     )
                 }
@@ -309,6 +309,8 @@ fun generateLadderData(playerCount: Int): List<LadderLine> {
         )
     }
 
+    Log.e("sy.lee", ladderData.toString())
+
     return ladderData
 }
 
@@ -410,8 +412,15 @@ fun calculatePlayerPathForIndex(
     while (currentPosition?.y!! < 1f) {
         // 수직 이동 (y 값 증가)
         val nextVerticalPoint = canMovePointList
-            .filter { it.x == currentPosition?.x && it.y > currentPosition?.y!! }
-            .minByOrNull { it.y - currentPosition?.y!! }
+            .filter {
+                // 소수점 첫번째 자리 이하를 버리고 비교
+                floor(it.x * 10) == floor(currentPosition?.x!! * 10) &&
+                        floor(it.y * 10) > floor(currentPosition?.y!! * 10)
+            }
+            .minByOrNull {
+                // 소수점 첫번째 자리 이하를 버리고 차이를 계산
+                floor(it.y * 10) - floor(currentPosition?.y!! * 10)
+            }
 
         if (nextVerticalPoint != null) {
             path.add(nextVerticalPoint)
@@ -420,14 +429,26 @@ fun calculatePlayerPathForIndex(
 
         if (currentPosition.y == 1.0f) break
 
-        // 수평 이동 (x 값 변화)
-        val nextHorizontalPoint = canMovePointList
-            .filter { it.y == currentPosition?.y && it.x != currentPosition?.x!! }
-            .minByOrNull { abs(it.x - currentPosition?.x!!) }
+        // 수평 이동 로직
+        val nextHorizontalPoint = ladderData
+            .filter { it.horizontal != null }
+            .firstNotNullOfOrNull { horizontalLine ->
+                val start = horizontalLine.horizontal?.start
+                val end = horizontalLine.horizontal?.end
 
-        if (nextHorizontalPoint != null) {
-            path.add(nextHorizontalPoint)
-            currentPosition = nextHorizontalPoint
+                when {
+                    // currentPosition과 start가 일치하면 end로 이동 (소수점 첫째자리까지만 비교)
+                    floor(start?.x!! * 10) == floor(currentPosition?.x!! * 10) && floor(start.y * 10) == floor(currentPosition?.y!! * 10) -> end
+                    // currentPosition과 end가 일치하면 start로 이동 (소수점 첫째자리까지만 비교)
+                    floor(end?.x!! * 10) == floor(currentPosition?.x!! * 10) && floor(end.y * 10) == floor(currentPosition?.y!! * 10) -> start
+                    else -> null
+                }
+            }
+
+        // nextHorizontalPoint가 null이 아니면 경로에 추가하고 currentPosition을 업데이트
+        nextHorizontalPoint?.let {
+            path.add(it)
+            currentPosition = it
         }
     }
 
