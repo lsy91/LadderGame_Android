@@ -130,12 +130,15 @@ fun SelectPlayerCountScreen(
                         TextField(
                             value = playerName,
                             onValueChange = { inputPlayerName ->
-                                playerNames = playerNames.toMutableList().apply {
-                                    this[index] = inputPlayerName
+                                // 입력값 1글자 로 제한
+                                if (inputPlayerName.length <= 1) {
+                                    playerNames = playerNames.toMutableList().apply {
+                                        this[index] = inputPlayerName
+                                    }
                                 }
                             },
                             keyboardOptions = KeyboardOptions.Default.copy(
-                                keyboardType = KeyboardType.Number,
+                                keyboardType = KeyboardType.Text,
                                 imeAction = ImeAction.Next
                             ),
                             singleLine = true,

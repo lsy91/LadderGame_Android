@@ -1,5 +1,6 @@
 package com.quintet.laddergame.ui
 
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -88,10 +89,11 @@ fun SelectWinnerCountScreen(
                         value = winnerCount,
                         onValueChange = { inputWinnerCount ->
                             val count = inputWinnerCount.toIntOrNull()
-                            if (inputWinnerCount.isBlank() || (count != null && count in 1..< playerCount)) {
+                            if (inputWinnerCount.isBlank() || (count != null && count in 1..<playerCount)) {
                                 winnerCount = inputWinnerCount
                                 count?.let {
-                                    winnerTitles = List(it) { index -> winnerTitles.getOrNull(index) ?: "" }
+                                    // winnerTitles 리스트를 기본값 "★"으로 초기화
+                                    winnerTitles = List(it) { "★" }
                                 }
                             }
                         },
@@ -114,7 +116,7 @@ fun SelectWinnerCountScreen(
             // 당첨 제목 입력 필드
             val count = winnerCount.toIntOrNull() ?: 0
             if (count > 0) {
-                itemsIndexed(winnerTitles) { index, winnerTitle ->
+                itemsIndexed(winnerTitles) { index, _ ->
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically
@@ -129,18 +131,16 @@ fun SelectWinnerCountScreen(
                         Spacer(modifier = Modifier.width(10.dp))
 
                         TextField(
-                            value = winnerTitle,
-                            onValueChange = { inputWinnerTitle ->
-                                winnerTitles = winnerTitles.toMutableList().apply {
-                                    this[index] = inputWinnerTitle
-                                }
-                            },
-                            keyboardOptions = KeyboardOptions.Default.copy(
-                                keyboardType = KeyboardType.Number,
-                                imeAction = ImeAction.Next
-                            ),
+                            // 당첨 기본값 ★
+                            value = "★",
+                            onValueChange = {},
+                            readOnly = true,
                             singleLine = true,
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier.weight(1f),
+                            colors = TextFieldDefaults.colors(
+                                focusedIndicatorColor = Color.Transparent, // 포커스된 배경색 투명으로 설정
+                                unfocusedIndicatorColor = Color.Transparent // 포커스 해제된 배경색 투명으로 설정
+                            )
                         )
                     }
                 }
