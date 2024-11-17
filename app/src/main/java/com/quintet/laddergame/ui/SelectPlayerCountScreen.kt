@@ -59,8 +59,18 @@ fun SelectPlayerCountScreen(
             text = "게임 설정",
             fontSize = 34.sp,
             style = MaterialTheme.typography.headlineLarge,
-            modifier = Modifier.padding(top = 50.dp, bottom = 20.dp)
+            modifier = Modifier.padding(top = 50.dp)
         )
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        Text(
+            text = "각 플레이어 이름은 1글자로 설정해주세요.",
+            fontSize = 12.sp,
+            style = MaterialTheme.typography.titleSmall
+        )
+
+        Spacer(modifier = Modifier.height(20.dp))
 
         LazyColumn(
             modifier = Modifier.fillMaxWidth(),

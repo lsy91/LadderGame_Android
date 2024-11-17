@@ -16,22 +16,23 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.quintet.laddergame.bean.HorizontalLine
@@ -41,7 +42,6 @@ import com.quintet.laddergame.bean.PlayerGameInfo
 import com.quintet.laddergame.bean.VerticalLine
 import com.quintet.laddergame.bean.Winner
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlin.math.floor
 import kotlin.random.Random
@@ -60,10 +60,10 @@ fun LadderGameScreen(
     val shuffledWinnerTitles = remember { winnerInfo.winnerPrizes.shuffled() }
     val gameElementsPadding = 16.dp
 
-    var gameInProgress by remember { mutableStateOf(false) }
+//    var gameInProgress by remember { mutableStateOf(false) }
     val animatedX = remember { Animatable(0f) }  // x 애니메이션
     val animatedY = remember { Animatable(0f) }  // y 애니메이션
-    val scope = rememberCoroutineScope()
+//    val scope = rememberCoroutineScope()
 
     val ladderData = remember { mutableStateOf<List<LadderLine>>(emptyList()) }
     var playerGameInfo by remember { mutableStateOf<List<PlayerGameInfo>>(emptyList()) }
@@ -114,10 +114,24 @@ fun LadderGameScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(vertical = 20.dp)
-            .background(Color.Black),
+            .drawBehind {
+                drawRect(
+                    color = Color.Black
+                )
+            }
+            .padding(vertical = 20.dp),
         verticalArrangement = Arrangement.Center
     ) {
+        Text(
+            text = "플레이어를 클릭하면 게임이 시작됩니다.",
+            fontSize = 12.sp,
+            textAlign = TextAlign.Center,
+            style = MaterialTheme.typography.titleSmall,
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Spacer(modifier = Modifier.height(20.dp))
+
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -187,33 +201,34 @@ fun LadderGameScreen(
 
         Spacer(modifier = Modifier.height(gameElementsPadding)) // 세로 요소 간 간격
 
-        Button(
-            onClick = {
-                if (!gameInProgress) {
-                    scope.launch {
-                        // 애니메이션 초기화
-                        animatedX.snapTo(0f)
-                        animatedY.snapTo(0f)
-                        // 애니메이션 시작
-                        animatedX.animateTo(
-                            targetValue = 1f,  // 예시로 x, y가 모두 1로 끝까지 이동
-                            animationSpec = tween(durationMillis = 1000)
-                        )
-                        animatedY.animateTo(
-                            targetValue = 1f,
-                            animationSpec = tween(durationMillis = 1000)
-                        )
-                        gameInProgress = false
-                    }
-                    gameInProgress = true
-                }
-            },
-            modifier = Modifier
-                .padding(gameElementsPadding)
-                .align(Alignment.CenterHorizontally)
-        ) {
-            Text("Start Game")
-        }
+        /** TODO 전체 플레이어 동시 시작 버튼은 추후에 구현 예정 **/
+//        Button(
+//            onClick = {
+//                if (!gameInProgress) {
+//                    scope.launch {
+//                        // 애니메이션 초기화
+//                        animatedX.snapTo(0f)
+//                        animatedY.snapTo(0f)
+//                        // 애니메이션 시작
+//                        animatedX.animateTo(
+//                            targetValue = 1f,  // 예시로 x, y가 모두 1로 끝까지 이동
+//                            animationSpec = tween(durationMillis = 1000)
+//                        )
+//                        animatedY.animateTo(
+//                            targetValue = 1f,
+//                            animationSpec = tween(durationMillis = 1000)
+//                        )
+//                        gameInProgress = false
+//                    }
+//                    gameInProgress = true
+//                }
+//            },
+//            modifier = Modifier
+//                .padding(gameElementsPadding)
+//                .align(Alignment.CenterHorizontally)
+//        ) {
+//            Text("Start Game")
+//        }
     }
 }
 
