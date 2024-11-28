@@ -1,4 +1,4 @@
-package com.quintet.laddergame.bean
+package com.quintet.laddergame.model
 
 import androidx.annotation.Keep
 import androidx.compose.ui.geometry.Offset

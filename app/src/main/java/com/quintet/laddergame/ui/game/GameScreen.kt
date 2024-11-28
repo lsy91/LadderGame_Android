@@ -1,4 +1,4 @@
-package com.quintet.laddergame.ui
+package com.quintet.laddergame.ui.game
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
@@ -35,12 +35,12 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.quintet.laddergame.bean.HorizontalLine
-import com.quintet.laddergame.bean.LadderLine
-import com.quintet.laddergame.bean.Player
-import com.quintet.laddergame.bean.PlayerGameInfo
-import com.quintet.laddergame.bean.VerticalLine
-import com.quintet.laddergame.bean.Winner
+import com.quintet.laddergame.model.HorizontalLine
+import com.quintet.laddergame.model.LadderLine
+import com.quintet.laddergame.model.Player
+import com.quintet.laddergame.model.PlayerGameInfo
+import com.quintet.laddergame.model.VerticalLine
+import com.quintet.laddergame.model.Winner
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlin.math.floor
@@ -52,7 +52,7 @@ import kotlin.random.Random
  * 2024-06-16 Created by sy.lee
  */
 @Composable
-fun LadderGameScreen(
+fun GameScreen(
     playerInfo: Player,
     winnerInfo: Winner
 ) {

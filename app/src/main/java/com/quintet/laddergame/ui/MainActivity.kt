@@ -1,14 +1,10 @@
-package com.quintet.laddergame
+package com.quintet.laddergame.ui
 
 import android.content.res.Configuration
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -16,12 +12,12 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.google.gson.reflect.TypeToken
-import com.quintet.laddergame.bean.Player
-import com.quintet.laddergame.bean.Winner
-import com.quintet.laddergame.ui.LadderGameScreen
-import com.quintet.laddergame.ui.SelectPlayerCountScreen
-import com.quintet.laddergame.ui.SelectWinnerCountScreen
+import com.quintet.laddergame.model.Player
+import com.quintet.laddergame.model.Winner
+import com.quintet.laddergame.ui.game.GameScreen
+import com.quintet.laddergame.ui.player.PlayerScreen
 import com.quintet.laddergame.ui.theme.LadderGameTheme
+import com.quintet.laddergame.ui.winner.WinnerScreen
 import com.quintet.laddergame.utils.LadderGameUtils
 
 class MainActivity : ComponentActivity() {
@@ -30,14 +26,8 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             LadderGameTheme {
-                // A surface container using the 'background' color from the theme
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
-                ) {
-                    // NavHost 로 첫번째 Composable 화면으로 이동
-                    LadderGameContent()
-                }
+                // NavHost 로 첫번째 Composable 화면으로 이동
+                LadderGameContent()
             }
         }
     }
@@ -54,7 +44,7 @@ fun LadderGameContent() {
         startDestination = "SelectPlayerCount"
     ) {
         composable("SelectPlayerCount") {
-            SelectPlayerCountScreen(
+            PlayerScreen(
                 onSelectedPlayerInfo = { playerCount, playerNames ->
 
                     val playerInfo = Player(
@@ -77,7 +67,7 @@ fun LadderGameContent() {
             val playerInfoToken = object : TypeToken<Player>() {}.type
             val selectedPlayerInfo = LadderGameUtils.convertJSONToObj<Player>(playerInfoJson, playerInfoToken)
 
-            SelectWinnerCountScreen(
+            WinnerScreen(
                 playerCount = selectedPlayerInfo?.playerCount ?: 0,
                 onSelectedGameInfo = { winnerCount, winnerTitles ->
 
@@ -112,7 +102,7 @@ fun LadderGameContent() {
             val winnerInfoToken = object : TypeToken<Winner>() {}.type
             val selectedWinnerInfo = LadderGameUtils.convertJSONToObj<Winner>(winnerInfoJson, winnerInfoToken)
 
-            LadderGameScreen(
+            GameScreen(
                 playerInfo = selectedPlayerInfo ?: Player(),
                 winnerInfo = selectedWinnerInfo ?: Winner()
             )

@@ -1,4 +1,4 @@
-package com.quintet.laddergame.ui
+package com.quintet.laddergame.ui.player
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -39,7 +39,7 @@ import androidx.compose.ui.unit.sp
  * 2024-06-16 Created by sy.lee
  */
 @Composable
-fun SelectPlayerCountScreen(
+fun PlayerScreen(
     onSelectedPlayerInfo: (Int, List<String>) -> Unit // 플레이어 정보를 전달하기 위한 콜백
 ) {
     // 플레이어 인원 수

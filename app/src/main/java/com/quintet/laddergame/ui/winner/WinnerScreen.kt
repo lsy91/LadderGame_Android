@@ -1,6 +1,5 @@
-package com.quintet.laddergame.ui
+package com.quintet.laddergame.ui.winner
 
-import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -40,7 +39,7 @@ import androidx.compose.ui.unit.sp
  * 2024-06-16 Created by sy.lee
  */
 @Composable
-fun SelectWinnerCountScreen(
+fun WinnerScreen(
     playerCount: Int,
     onSelectedGameInfo: (Int, List<String>) -> Unit
 ) {
