@@ -38,6 +38,9 @@ fun LadderGameNavGraph(
         startDestination = LadderGameDestinations.SET_PLAYER_ROUTE
     ) {
         composable(LadderGameDestinations.SET_PLAYER_ROUTE) {
+
+            // TODO ViewModel 에서 State 선언
+
             PlayerScreen(
                 onSelectedPlayerInfo = { playerCount, playerNames ->
 
@@ -56,6 +59,8 @@ fun LadderGameNavGraph(
             route = "SelectWinnerCount" + "/" + "{playerInfo}",
             arguments = listOf( navArgument("playerInfo") { type = NavType.StringType; defaultValue = ""} )
         ) { navBackStackEntry ->
+
+            // TODO ViewModel 에서 State 선언
 
             val playerInfoJson = navBackStackEntry.arguments?.getString("playerInfo")
             val playerInfoToken = object : TypeToken<Player>() {}.type
@@ -87,6 +92,8 @@ fun LadderGameNavGraph(
                 navArgument("winnerInfo") { type = NavType.StringType; defaultValue = ""},
             )
         ) { navBackStackEntry ->
+
+            // TODO ViewModel 에서 State 선언
 
             val playerInfoJson = navBackStackEntry.arguments?.getString("playerInfo")
             val playerInfoToken = object : TypeToken<Player>() {}.type
