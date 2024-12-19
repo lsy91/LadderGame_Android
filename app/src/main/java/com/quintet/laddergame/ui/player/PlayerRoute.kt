@@ -12,6 +12,7 @@ import com.quintet.laddergame.utils.LadderGameConstants
 fun PlayerRoute(
     playerViewModel: PlayerViewModel,
     openDrawer: () -> Unit,
+    navigateToScreen: (String) -> Unit,
     snackBarHostState: SnackbarHostState = remember { SnackbarHostState() }
 ) {
     // UiState of the Set Player Screen
@@ -20,6 +21,7 @@ fun PlayerRoute(
     PlayerRoute(
         uiState = playerUiState,
         openDrawer = openDrawer,
+        navigateToScreen = navigateToScreen,
         snackBarHostState = snackBarHostState,
         onEvent = { intent -> playerViewModel.processEvent(intent) }
     )
@@ -29,6 +31,7 @@ fun PlayerRoute(
 fun PlayerRoute(
     uiState: PlayerState,
     openDrawer: () -> Unit,
+    navigateToScreen: (String) -> Unit,
     snackBarHostState: SnackbarHostState,
     onEvent: (PlayerIntent) -> Unit,
 ) {
@@ -39,7 +42,7 @@ fun PlayerRoute(
     ) {
         PlayerScreen(
             uiState = uiState,
-            snackBarHostState = snackBarHostState,
+            navigateToScreen = navigateToScreen,
             onEvent = onEvent
         )
     }

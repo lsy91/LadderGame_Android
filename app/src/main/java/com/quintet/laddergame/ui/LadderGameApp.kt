@@ -41,6 +41,7 @@ fun LadderGameApp() {
             LadderGameNavGraph(
                 navController = navController,
                 openDrawer = { coroutineScope.launch { drawerState.open() } },
+                navigateToScreen = ladderGameActions.navigateToScreen
             )
         }
     }

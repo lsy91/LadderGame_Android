@@ -1,6 +1,7 @@
 package com.quintet.laddergame.model
 
 import androidx.annotation.Keep
+import androidx.compose.ui.geometry.Offset
 
 /**
  * Winner Data Class
@@ -9,6 +10,6 @@ import androidx.annotation.Keep
  */
 @Keep
 data class Winner(
-    val winnerCount: Int = 0,
-    val winnerPrizes: List<String> = listOf()
+    val isWinner: Boolean = false,
+    val point: Offset? = null
 )

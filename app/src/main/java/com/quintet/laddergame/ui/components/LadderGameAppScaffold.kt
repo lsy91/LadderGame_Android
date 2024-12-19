@@ -42,6 +42,9 @@ fun LadderGameAppScaffold(
                         screenId.equals(LadderGameConstants.SET_PLAYER_SCREEN_ID, ignoreCase = true) -> {
                             stringResource(R.string.set_player_screen_title)
                         }
+                        screenId.equals(LadderGameConstants.SET_WINNER_SCREEN_ID, ignoreCase = true) -> {
+                            stringResource(R.string.set_winner_screen_title)
+                        }
                         else -> { "" }
                     }
 

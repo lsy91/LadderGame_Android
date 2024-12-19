@@ -1,5 +1,6 @@
 package com.quintet.laddergame.ui.winner
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -8,15 +9,13 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.LocalTextStyle
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
@@ -27,11 +26,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import com.quintet.laddergame.R
+import com.quintet.laddergame.ui.LadderGameDestinations.GAME_ROUTE
+import com.quintet.laddergame.ui.utils.BaseText
 
 /**
  * Select Winner Count Screen
@@ -40,13 +42,13 @@ import androidx.compose.ui.unit.sp
  */
 @Composable
 fun WinnerScreen(
+    uiState: WinnerState,
     playerCount: Int,
-    onSelectedGameInfo: (Int, List<String>) -> Unit
+    navigateToScreen: (String) -> Unit,
+    onEvent: (WinnerIntent) -> Unit
 ) {
     // 당첨 수
     var winnerCount by remember { mutableStateOf("") }
-    // 당첨 제목 리스트
-    var winnerTitles by remember { mutableStateOf<List<String>>(listOf()) }
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -55,17 +57,16 @@ fun WinnerScreen(
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        // 타이틀
-        Text(
-            text = "게임 설정",
-            fontSize = 34.sp,
-            style = MaterialTheme.typography.headlineLarge,
-            modifier = Modifier.padding(top = 50.dp, bottom = 20.dp)
+        BaseText(
+            text = "당첨 개수는 플레이어 수보다 적어야 합니다.",
+            fontSize = 12
         )
+
+        Spacer(modifier = Modifier.height(20.dp))
 
         LazyColumn(
             modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+            verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
             item {
                 Row(
@@ -73,11 +74,9 @@ fun WinnerScreen(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text(
+                    BaseText(
                         text = "당첨 개수",
-                        fontSize = 20.sp,
-                        style = MaterialTheme.typography.titleMedium,
-                        textAlign = TextAlign.Center,
+                        fontSize = 20,
                         modifier = Modifier
                             .wrapContentSize()
                     )
@@ -87,12 +86,20 @@ fun WinnerScreen(
                     TextField(
                         value = winnerCount,
                         onValueChange = { inputWinnerCount ->
-                            val count = inputWinnerCount.toIntOrNull()
-                            if (inputWinnerCount.isBlank() || (count != null && count in 1..<playerCount)) {
-                                winnerCount = inputWinnerCount
-                                count?.let {
-                                    // winnerTitles 리스트를 기본값 "★"으로 초기화
-                                    winnerTitles = List(it) { "★" }
+                            if (inputWinnerCount.isEmpty()) {
+                                winnerCount = ""
+                                onEvent(WinnerIntent.ClearWinners)
+                            } else {
+                                val count = inputWinnerCount.toIntOrNull()
+                                if (count != null) {
+                                    winnerCount = count.toString()
+
+                                    // 플레이어 수보다 적은 경우에만 Event 호출
+                                    if (count in 1 until playerCount) {
+                                        onEvent(WinnerIntent.LoadWinners(count, playerCount - count))
+                                    } else {
+                                        // TODO 플레이어 수보다 많습니다. 당첨 개수는 1개 이상이여야 합니다. SnackBar 오류 호출
+                                    }
                                 }
                             }
                         },
@@ -104,61 +111,51 @@ fun WinnerScreen(
                         singleLine = true,
                         colors = TextFieldDefaults.colors(
                             focusedContainerColor = Color.Transparent, // 포커스된 배경색 투명으로 설정
-                            unfocusedContainerColor = Color.Transparent // 포커스 해제된 배경색 투명으로 설정
+                            unfocusedContainerColor = Color.Transparent, // 포커스 해제된 배경색 투명으로 설정
+                            focusedIndicatorColor = Color.Red,
+                            unfocusedIndicatorColor = Color.White
                         )
                     )
                 }
 
-                Spacer(modifier = Modifier.height(20.dp))
+                Spacer(modifier = Modifier.height(40.dp))
             }
 
-            // 당첨 제목 입력 필드
-            val count = winnerCount.toIntOrNull() ?: 0
-            if (count > 0) {
-                itemsIndexed(winnerTitles) { index, _ ->
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "당첨 ${index + 1}",
-                            fontSize = 20.sp,
-                            style = MaterialTheme.typography.titleMedium,
-                            modifier = Modifier.weight(1f)
-                        )
+            items(uiState.winners.filter { winner -> winner.isWinner }.size) { winnerIndex ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    BaseText(
+                        text = "winner ${winnerIndex + 1}",
+                        fontSize = 20,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth().weight(1f)
+                    )
 
-                        Spacer(modifier = Modifier.width(10.dp))
-
-                        TextField(
-                            // 당첨 기본값 ★
-                            value = "★",
-                            onValueChange = {},
-                            readOnly = true,
-                            singleLine = true,
-                            modifier = Modifier.weight(1f),
-                            colors = TextFieldDefaults.colors(
-                                focusedIndicatorColor = Color.Transparent, // 포커스된 배경색 투명으로 설정
-                                unfocusedIndicatorColor = Color.Transparent // 포커스 해제된 배경색 투명으로 설정
-                            )
-                        )
-                    }
+                    Image(
+                        painter = painterResource(R.drawable.ic_winner),
+                        contentDescription = "Winner Icon",
+                        modifier = Modifier.size(30.dp).weight(1f)
+                    )
                 }
             }
 
             item {
-                Spacer(modifier = Modifier.height(20.dp))
+                Spacer(modifier = Modifier.height(40.dp))
 
                 Button(
-                    enabled = winnerCount.isNotBlank() && winnerTitles.all { it.isNotBlank() },
+                    enabled = uiState.winners.isNotEmpty() && uiState.winners.filter { winner -> winner.isWinner }.size < playerCount,
                     onClick = {
-                        // 설정한 당첨 수를 콜백으로 NavHost에 전달
-                        onSelectedGameInfo(winnerCount.toInt(), winnerTitles)
+                        // 사다리게임 화면으로 이동
+                        navigateToScreen(GAME_ROUTE)
                     },
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text(
+                    BaseText(
                         text = "Next",
-                        modifier = Modifier.padding(16.dp)
+                        fontSize = 20
                     )
                 }
             }

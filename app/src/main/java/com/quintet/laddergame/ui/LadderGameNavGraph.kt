@@ -12,11 +12,13 @@ import androidx.navigation.navArgument
 import com.google.gson.reflect.TypeToken
 import com.quintet.laddergame.model.Player
 import com.quintet.laddergame.model.Winner
+import com.quintet.laddergame.ui.LadderGameDestinations.SET_PLAYER_ROUTE
+import com.quintet.laddergame.ui.LadderGameDestinations.SET_WINNER_ROUTE
 import com.quintet.laddergame.ui.game.GameScreen
 import com.quintet.laddergame.ui.game.GameViewModel
 import com.quintet.laddergame.ui.player.PlayerRoute
 import com.quintet.laddergame.ui.player.PlayerViewModel
-import com.quintet.laddergame.ui.winner.WinnerScreen
+import com.quintet.laddergame.ui.winner.WinnerRoute
 import com.quintet.laddergame.ui.winner.WinnerViewModel
 import com.quintet.laddergame.utils.LadderGameUtils
 
@@ -28,7 +30,8 @@ fun LadderGameNavGraph(
     gameViewModel: GameViewModel = hiltViewModel(),
     navController: NavHostController = rememberNavController(),
     openDrawer: () -> Unit = {},
-    startDestination: String = LadderGameDestinations.SET_PLAYER_ROUTE
+    navigateToScreen: (String) -> Unit,
+    startDestination: String = SET_PLAYER_ROUTE
 ) {
     NavHost(
         navController = navController,
@@ -36,41 +39,23 @@ fun LadderGameNavGraph(
         modifier = modifier
     ) {
         composable(
-            route = LadderGameDestinations.SET_PLAYER_ROUTE
+            route = SET_PLAYER_ROUTE
         ) {
             PlayerRoute(
                 playerViewModel = setPlayerViewModel,
-                openDrawer = openDrawer
+                openDrawer = openDrawer,
+                navigateToScreen = navigateToScreen
             )
         }
 
         composable(
-            route = "SelectWinnerCount" + "/" + "{playerInfo}",
-            arguments = listOf( navArgument("playerInfo") { type = NavType.StringType; defaultValue = ""} )
-        ) { navBackStackEntry ->
-
-            // TODO ViewModel 에서 State 선언
-
-            val playerInfoJson = navBackStackEntry.arguments?.getString("playerInfo")
-            val playerInfoToken = object : TypeToken<Player>() {}.type
-            val selectedPlayerInfo = LadderGameUtils.convertJSONToObj<Player>(playerInfoJson, playerInfoToken)
-
-            WinnerScreen(
-                playerCount = selectedPlayerInfo?.playerIndex ?: 0,
-                onSelectedGameInfo = { winnerCount, winnerTitles ->
-
-                    val winnerInfo = Winner(
-                        winnerCount = winnerCount,
-                        // 당첨 설정된 만큼을 제외하고, 플레이어 수 차이만큼 남는 Prize 요소는 "꽝" 으로 미리 만들어둔다. 그래야 그릴 때 shuffle 이 먹힌다.
-                        winnerPrizes = (winnerTitles + List((selectedPlayerInfo?.playerIndex ?: 0) - winnerTitles.size) { "꽝" })
-                    )
-
-                    navController.navigate("LadderGameView"
-                            + "/"
-                            + "${LadderGameUtils.convertObjToJSON(selectedPlayerInfo)}"
-                            + "/"
-                            + "${LadderGameUtils.convertObjToJSON(winnerInfo)}")
-                }
+            route = SET_WINNER_ROUTE
+        ) {
+            WinnerRoute(
+                playerViewModel = setPlayerViewModel,
+                winnerViewModel = setWinnerViewModel,
+                openDrawer = openDrawer,
+                navigateToScreen = navigateToScreen
             )
         }
 

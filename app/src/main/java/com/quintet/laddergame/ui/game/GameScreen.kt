@@ -57,7 +57,7 @@ fun GameScreen(
     winnerInfo: Winner
 ) {
     val shuffledPlayerNames = remember { listOf("") }
-    val shuffledWinnerTitles = remember { winnerInfo.winnerPrizes.shuffled() }
+//    val shuffledWinnerTitles = remember { winnerInfo..shuffled() }
     val gameElementsPadding = 16.dp
 
 //    var gameInProgress by remember { mutableStateOf(false) }
@@ -196,7 +196,7 @@ fun GameScreen(
                 .fillMaxWidth().padding(horizontal = 20.dp),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            DrawWinners(playerInfo.playerIndex, shuffledWinnerTitles)
+//            DrawWinners(playerInfo.playerIndex, shuffledWinnerTitles)
         }
 
         Spacer(modifier = Modifier.height(gameElementsPadding)) // 세로 요소 간 간격

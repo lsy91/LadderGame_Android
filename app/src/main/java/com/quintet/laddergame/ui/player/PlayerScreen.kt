@@ -16,7 +16,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.LocalTextStyle
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
@@ -32,6 +31,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.quintet.laddergame.ui.LadderGameDestinations.SET_WINNER_ROUTE
 import com.quintet.laddergame.ui.utils.BaseText
 
 /**
@@ -42,7 +42,7 @@ import com.quintet.laddergame.ui.utils.BaseText
 @Composable
 fun PlayerScreen(
     uiState: PlayerState,
-    snackBarHostState: SnackbarHostState,
+    navigateToScreen: (String) -> Unit,
     onEvent: (PlayerIntent) -> Unit
 ) {
     // 플레이어 인원 수
@@ -145,8 +145,8 @@ fun PlayerScreen(
                 Button(
                     enabled = uiState.players.size > 1,
                     onClick = {
-                        // 설정한 플레이어 수를 콜백으로 NavHost에 전달
-//                        onSelectedPlayerInfo(playerCount.toInt(), playerNames)
+                        // 당첨 수 설정 화면으로 이동
+                        navigateToScreen(SET_WINNER_ROUTE)
                     },
                     modifier = Modifier.fillMaxWidth()
                 ) {
