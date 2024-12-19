@@ -16,6 +16,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
@@ -40,7 +41,9 @@ import androidx.compose.ui.unit.sp
  */
 @Composable
 fun PlayerScreen(
-    onSelectedPlayerInfo: (Int, List<String>) -> Unit // 플레이어 정보를 전달하기 위한 콜백
+    uiState: PlayerState,
+    openDrawer: () -> Unit,
+    snackBarHostState: SnackbarHostState
 ) {
     // 플레이어 인원 수
     var playerCount by remember { mutableStateOf("") }
@@ -165,7 +168,7 @@ fun PlayerScreen(
                     enabled = playerCount.isNotBlank() && playerNames.all { it.isNotBlank() },
                     onClick = {
                         // 설정한 플레이어 수를 콜백으로 NavHost에 전달
-                        onSelectedPlayerInfo(playerCount.toInt(), playerNames)
+//                        onSelectedPlayerInfo(playerCount.toInt(), playerNames)
                     },
                     modifier = Modifier.fillMaxWidth()
                 ) {

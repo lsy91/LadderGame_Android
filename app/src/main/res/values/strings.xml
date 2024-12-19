@@ -1,3 +1,7 @@
 <resources>
     <string name="app_name">사다리게임</string>
+    <string name="menu_icon_description">menu</string>
+    <string name="more_icon_description">more</string>
+
+    <string name="set_player_screen_title">Set Players</string>
 </resources>

@@ -10,13 +10,11 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.google.gson.reflect.TypeToken
-import com.quintet.laddergame.data.AppContainer
-import com.quintet.laddergame.data.AppContainerImpl
 import com.quintet.laddergame.model.Player
 import com.quintet.laddergame.model.Winner
 import com.quintet.laddergame.ui.game.GameScreen
 import com.quintet.laddergame.ui.game.GameViewModel
-import com.quintet.laddergame.ui.player.PlayerScreen
+import com.quintet.laddergame.ui.player.PlayerRoute
 import com.quintet.laddergame.ui.player.PlayerViewModel
 import com.quintet.laddergame.ui.winner.WinnerScreen
 import com.quintet.laddergame.ui.winner.WinnerViewModel
@@ -25,7 +23,6 @@ import com.quintet.laddergame.utils.LadderGameUtils
 @Composable
 fun LadderGameNavGraph(
     modifier: Modifier = Modifier,
-    appContainer: AppContainer = AppContainerImpl(), // Repository 모음
     setPlayerViewModel: PlayerViewModel = hiltViewModel(),
     setWinnerViewModel: WinnerViewModel = hiltViewModel(),
     gameViewModel: GameViewModel = hiltViewModel(),
@@ -35,23 +32,15 @@ fun LadderGameNavGraph(
 ) {
     NavHost(
         navController = navController,
-        startDestination = LadderGameDestinations.SET_PLAYER_ROUTE
+        startDestination = startDestination,
+        modifier = modifier
     ) {
-        composable(LadderGameDestinations.SET_PLAYER_ROUTE) {
-
-            // TODO ViewModel 에서 State 선언
-
-            PlayerScreen(
-                onSelectedPlayerInfo = { playerCount, playerNames ->
-
-                    val playerInfo = Player(
-                        playerCount = playerCount,
-                        playerNames = playerNames
-                    )
-
-                    // 당첨 수 화면으로 이동
-                    navController.navigate(LadderGameDestinations.SET_PLAYER_ROUTE + "/" + "${LadderGameUtils.convertObjToJSON(playerInfo)}")
-                }
+        composable(
+            route = LadderGameDestinations.SET_PLAYER_ROUTE
+        ) {
+            PlayerRoute(
+                playerViewModel = setPlayerViewModel,
+                openDrawer = openDrawer
             )
         }
 
