@@ -21,3 +21,5 @@ val DarkOnPrimary = Color(0xFF000000)
 val DarkOnSecondary = Color(0xFF000000)
 val DarkOnBackground = Color(0xFFFFFFFF)
 val DarkOnSurface = Color(0xFFFFFFFF)
+
+val ScreenTitleFontColor = Color(0xFFFFFFFF)

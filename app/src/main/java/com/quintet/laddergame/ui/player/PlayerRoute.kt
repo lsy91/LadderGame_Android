@@ -6,6 +6,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.quintet.laddergame.ui.components.LadderGameAppScaffold
+import com.quintet.laddergame.utils.LadderGameConstants
 
 @Composable
 fun PlayerRoute(
@@ -19,7 +20,8 @@ fun PlayerRoute(
     PlayerRoute(
         uiState = playerUiState,
         openDrawer = openDrawer,
-        snackBarHostState = snackBarHostState
+        snackBarHostState = snackBarHostState,
+        onEvent = { intent -> playerViewModel.processEvent(intent) }
     )
 }
 
@@ -27,16 +29,18 @@ fun PlayerRoute(
 fun PlayerRoute(
     uiState: PlayerState,
     openDrawer: () -> Unit,
-    snackBarHostState: SnackbarHostState
+    snackBarHostState: SnackbarHostState,
+    onEvent: (PlayerIntent) -> Unit,
 ) {
     LadderGameAppScaffold(
+        screenId = LadderGameConstants.SET_PLAYER_SCREEN_ID,
         openDrawer = openDrawer,
         snackBarHostState = snackBarHostState
     ) {
         PlayerScreen(
             uiState = uiState,
-            openDrawer = openDrawer,
-            snackBarHostState = snackBarHostState
+            snackBarHostState = snackBarHostState,
+            onEvent = onEvent
         )
     }
 }

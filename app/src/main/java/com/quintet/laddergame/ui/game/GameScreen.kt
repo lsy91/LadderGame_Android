@@ -56,7 +56,7 @@ fun GameScreen(
     playerInfo: Player,
     winnerInfo: Winner
 ) {
-    val shuffledPlayerNames = remember { playerInfo.playerNames.shuffled() }
+    val shuffledPlayerNames = remember { listOf("") }
     val shuffledWinnerTitles = remember { winnerInfo.winnerPrizes.shuffled() }
     val gameElementsPadding = 16.dp
 
@@ -99,10 +99,10 @@ fun GameScreen(
         }
     }
 
-    LaunchedEffect(playerInfo.playerCount) {
+    LaunchedEffect(playerInfo.playerIndex) {
         // ladderData를 비동기로 생성
         ladderData.value = withContext(Dispatchers.Default) {
-            generateLadderData(playerInfo.playerCount)
+            generateLadderData(playerInfo.playerIndex)
         }
 
         // ladderData가 완료된 후 결과를 사용하여 playerGameInfo 생성
@@ -139,7 +139,7 @@ fun GameScreen(
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
             DrawPlayers(
-                playerCount = playerInfo.playerCount,
+                playerCount = playerInfo.playerIndex,
                 shuffledPlayerNames = shuffledPlayerNames,
                 onPlayerSelected = { index ->
                     // 플레이어가 클릭되었을 때 해당 플레이어 경로를 설정
@@ -196,7 +196,7 @@ fun GameScreen(
                 .fillMaxWidth().padding(horizontal = 20.dp),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            DrawWinners(playerInfo.playerCount, shuffledWinnerTitles)
+            DrawWinners(playerInfo.playerIndex, shuffledWinnerTitles)
         }
 
         Spacer(modifier = Modifier.height(gameElementsPadding)) // 세로 요소 간 간격

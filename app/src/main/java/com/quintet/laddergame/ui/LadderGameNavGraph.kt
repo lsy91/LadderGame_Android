@@ -56,13 +56,13 @@ fun LadderGameNavGraph(
             val selectedPlayerInfo = LadderGameUtils.convertJSONToObj<Player>(playerInfoJson, playerInfoToken)
 
             WinnerScreen(
-                playerCount = selectedPlayerInfo?.playerCount ?: 0,
+                playerCount = selectedPlayerInfo?.playerIndex ?: 0,
                 onSelectedGameInfo = { winnerCount, winnerTitles ->
 
                     val winnerInfo = Winner(
                         winnerCount = winnerCount,
                         // 당첨 설정된 만큼을 제외하고, 플레이어 수 차이만큼 남는 Prize 요소는 "꽝" 으로 미리 만들어둔다. 그래야 그릴 때 shuffle 이 먹힌다.
-                        winnerPrizes = (winnerTitles + List((selectedPlayerInfo?.playerCount ?: 0) - winnerTitles.size) { "꽝" })
+                        winnerPrizes = (winnerTitles + List((selectedPlayerInfo?.playerIndex ?: 0) - winnerTitles.size) { "꽝" })
                     )
 
                     navController.navigate("LadderGameView"
@@ -93,7 +93,7 @@ fun LadderGameNavGraph(
             val selectedWinnerInfo = LadderGameUtils.convertJSONToObj<Winner>(winnerInfoJson, winnerInfoToken)
 
             GameScreen(
-                playerInfo = selectedPlayerInfo ?: Player(),
+                playerInfo = selectedPlayerInfo ?: Player(0, 0),
                 winnerInfo = selectedWinnerInfo ?: Winner()
             )
         }

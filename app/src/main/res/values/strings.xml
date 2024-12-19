@@ -4,4 +4,6 @@
     <string name="more_icon_description">more</string>
 
     <string name="set_player_screen_title">Set Players</string>
+    <string name="set_winner_screen_title">Set Winners</string>
+    <string name="ladder_game_screen_title">Ladder Game</string>
 </resources>

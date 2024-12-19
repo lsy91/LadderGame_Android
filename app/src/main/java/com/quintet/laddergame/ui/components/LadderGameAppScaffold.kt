@@ -16,11 +16,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import com.quintet.laddergame.R
+import com.quintet.laddergame.ui.utils.BaseText
+import com.quintet.laddergame.utils.LadderGameConstants
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LadderGameAppScaffold(
     modifier: Modifier = Modifier,
+    screenId: String,
     openDrawer: () -> Unit,
     snackBarHostState: SnackbarHostState,
     content: @Composable () -> Unit
@@ -35,7 +38,17 @@ fun LadderGameAppScaffold(
         topBar = {
             CenterAlignedTopAppBar(
                 title = {
-                    stringResource(R.string.set_player_screen_title)
+                    val topBarTitle = when {
+                        screenId.equals(LadderGameConstants.SET_PLAYER_SCREEN_ID, ignoreCase = true) -> {
+                            stringResource(R.string.set_player_screen_title)
+                        }
+                        else -> { "" }
+                    }
+
+                    BaseText(
+                        text = topBarTitle,
+                        fontSize = 20
+                    )
                 },
                 navigationIcon = {
                     IconButton(onClick = openDrawer) {

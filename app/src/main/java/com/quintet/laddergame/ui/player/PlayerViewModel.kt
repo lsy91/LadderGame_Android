@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
@@ -17,25 +18,31 @@ class PlayerViewModel @Inject constructor(
     // StateFlow for the UI state
     private val _uiState = MutableStateFlow(
         PlayerState(
-            errorMessages = emptyList(),
-            playerCount = 0
+            players = emptyList(),
+            errorMessages = emptyList()
         )
     )
     val playerUiState: StateFlow<PlayerState> = _uiState.asStateFlow()
 
     // Process user events
     fun processEvent(intent: PlayerIntent) {
-        when (intent) {
-            is PlayerIntent.LoadPlayers -> loadPlayers(intent.playerCount)
+        viewModelScope.launch {
+            when (intent) {
+                is PlayerIntent.LoadPlayers -> {
+                    _uiState.update {
+                        it.copy(
+                            players = playerRepository.loadPlayers(intent.inputPlayerCount)
+                        )
+                    }
+                }
+                is PlayerIntent.ClearPlayers -> {
+                    _uiState.update {
+                        it.copy(
+                            players = emptyList()
+                        )
+                    }
+                }
+            }
         }
-    }
-
-    private fun loadPlayers(playerCount: Int) {
-        _uiState.update {
-            it.copy(
-                playerCount = playerCount
-            )
-        }
-
     }
 }
