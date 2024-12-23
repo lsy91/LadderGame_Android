@@ -13,7 +13,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class PlayerViewModel @Inject constructor(
-    private val playerRepository: PlayerRepository
+    private val playerRepository: PlayerRepository,
 ): ViewModel() {
     // StateFlow for the UI state
     private val _uiState = MutableStateFlow(

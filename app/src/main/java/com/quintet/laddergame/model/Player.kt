@@ -12,13 +12,11 @@ import androidx.compose.ui.geometry.Offset
 data class Player(
     val playerIndex: Int,
     val player: Int,
-    val startPoint: Offset? = null,  // 각 플레이어별 vertical startPoint
-    val endPoint: Offset? = null,     // 각 플레이어별 vertical endPoint
+    val playerPosition: PlayerPosition? = null
 )
 
 @Keep
-data class PlayerGameInfo(
-    val playerIndex: Int? = null,      // 각 플레이어의 인덱스
-    val startPoint: Offset? = null,  // 각 플레이어별 vertical startPoint
-    val endPoint: Offset? = null,     // 각 플레이어별 vertical endPoint
+data class PlayerPosition(
+    val startPoint: Offset?,  // 각 플레이어별 vertical startPoint
+    val endPoint: Offset?,    // 각 플레이어별 vertical endPoint
 )

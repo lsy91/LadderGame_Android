@@ -1,5 +1,6 @@
 package com.quintet.laddergame.ui.game
 
+import android.util.Log
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
@@ -36,16 +37,12 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.quintet.laddergame.R
-import com.quintet.laddergame.model.HorizontalLine
 import com.quintet.laddergame.model.LadderLine
 import com.quintet.laddergame.model.Player
-import com.quintet.laddergame.model.PlayerGameInfo
-import com.quintet.laddergame.model.VerticalLine
 import com.quintet.laddergame.model.Winner
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlin.math.floor
-import kotlin.random.Random
 
 /**
  * Ladder Game Screen
@@ -62,13 +59,8 @@ fun GameScreen(
 ) {
     val gameElementsPadding = 16.dp
 
-//    var gameInProgress by remember { mutableStateOf(false) }
     val animatedX = remember { Animatable(0f) }  // x 애니메이션
     val animatedY = remember { Animatable(0f) }  // y 애니메이션
-//    val scope = rememberCoroutineScope()
-
-    val ladderData = remember { mutableStateOf<List<LadderLine>>(emptyList()) }
-    var playerGameInfo by remember { mutableStateOf<List<PlayerGameInfo>>(emptyList()) }
 
     // 선택된 플레이어 경로를 저장할 상태
     var selectedPlayerPath by remember { mutableStateOf<List<Offset>?>(null) }
@@ -102,12 +94,12 @@ fun GameScreen(
 
     LaunchedEffect(players) {
         // ladderData를 비동기로 생성
-        ladderData.value = withContext(Dispatchers.Default) {
-            generateLadderData(players.size)
+        withContext(Dispatchers.Default) {
+            onEvent(GameIntent.LoadLadders(players.size))
         }
 
-        // ladderData가 완료된 후 결과를 사용하여 playerGameInfo 생성
-        playerGameInfo = generatePlayerGameInfo(ladderData.value)
+        // ladderData가 완료된 후 결과를 사용하여 Player Position 설정
+        onEvent(GameIntent.SetPlayerPosition(uiState.ladders))
     }
 
     Column(
@@ -127,12 +119,15 @@ fun GameScreen(
                 .padding(horizontal = 20.dp),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
+            // TODO 차라리 gameViewModel 에 players 를 하나 만들어서, PlayerViewModel 에서 가져온 players 를 합친 다음 Intent 로 player position 을 업데이트하자.
+            Log.e("sy.lee", players.toString())
+
             DrawPlayers(
                 players = players,
                 onPlayerSelected = { index ->
                     // 플레이어가 클릭되었을 때 해당 플레이어 경로를 설정
-                    val path = playerGameInfo.getOrNull(index)?.let {
-                        calculatePlayerPathForIndex(index, ladderData.value, playerGameInfo)
+                    val path = players.getOrNull(index)?.let {
+                        calculatePlayerPathForIndex(index, uiState.ladders, players)
                     }
                     if (path != null) {
                         selectedPlayerPath = path
@@ -160,7 +155,7 @@ fun GameScreen(
                     .padding(horizontal = gameElementsPadding)
             ) {
                 // ladderDrawn이 true 일 때만 사다리를 그리도록 함
-                drawLadder(ladderData.value)
+                drawLadder(uiState.ladders)
 
                 // 애니메이션을 그릴 플레이어의 경로
                 selectedPlayerPath?.let {
@@ -235,85 +230,6 @@ fun DrawWinners(winners: List<Winner>) {
     }
 }
 
-fun generateLadderData(playerCount: Int): List<LadderLine> {
-    val ladderData = mutableListOf<LadderLine>()
-    val ladderWidth = 1f / (playerCount + 1)
-    val stepHeight = 1f / 11  // 총 11개 구간으로 나눔
-    val random = Random
-
-    // List to store horizontal lines for each column
-    val horizontalLinesForEachColumn = MutableList(playerCount) { mutableSetOf<Int>() }
-
-    // 세로줄마다 가로줄을 생성하는 부분 최적화
-    for (i in 0 until playerCount - 1) {
-        val x = (i + 1) * ladderWidth
-
-        // 이전 세로줄과 겹치지 않도록 랜덤한 가로줄 생성
-        val previousHorizontalLines = horizontalLinesForEachColumn.getOrNull(i - 1) ?: emptySet()
-
-        // 1~5개 가로줄을 랜덤하게 생성
-        val horizontalLineCount = random.nextInt(5) + 1
-        val horizontalLines = mutableSetOf<Int>()
-
-        // 중복을 최소화하는 방식으로 가로줄 생성
-        while (horizontalLines.size < horizontalLineCount) {
-            val y = random.nextInt(10) + 1
-            if (!previousHorizontalLines.contains(y)) {
-                horizontalLines.add(y)
-            }
-        }
-
-        // 생성된 가로줄을 ladderData에 추가
-        for (line in horizontalLines) {
-            val y = line * stepHeight
-            ladderData.add(LadderLine(horizontal = HorizontalLine(Offset(x, y), Offset(x + ladderWidth, y))))
-            horizontalLinesForEachColumn[i].add(line)
-        }
-    }
-
-    // 세로줄 추가 (플레이어마다 한 개의 세로줄)
-    for (i in 0 until playerCount) {
-        val x = (i + 1) * ladderWidth
-        val startPoint = Offset(x, 0f)
-        val endPoint = Offset(x, 1f)
-
-        // 세로줄과 함께 startPoint와 endPoint를 설정하여 추가
-        ladderData.add(
-            LadderLine(
-                vertical = VerticalLine(start = startPoint, end = endPoint)
-            )
-        )
-    }
-
-    return ladderData
-}
-
-fun generatePlayerGameInfo(ladderData: List<LadderLine>): List<PlayerGameInfo> {
-    // PlayerGameInfo를 저장할 리스트
-    val playerGameInfoList = mutableListOf<PlayerGameInfo>()
-
-    // ladderData에서 각 플레이어의 세로줄을 추출하여 PlayerGameInfo 생성
-    ladderData.filter { it.vertical != null } // 세로줄만 선택
-        .forEachIndexed { index, ladderLine ->
-            // 각 세로줄의 시작점과 끝점 정보를 가져옴
-            val startPoint = ladderLine.vertical?.start
-            val endPoint = ladderLine.vertical?.end
-
-            // PlayerGameInfo 생성하여 리스트에 추가
-            if (startPoint != null && endPoint != null) {
-                playerGameInfoList.add(
-                    PlayerGameInfo(
-                        playerIndex = index,
-                        startPoint = startPoint,
-                        endPoint = endPoint
-                    )
-                )
-            }
-        }
-
-    return playerGameInfoList
-}
-
 fun DrawScope.drawLadder(ladderData: List<LadderLine>) {
     val stroke = Stroke(4.dp.toPx())
     val ladderHeight = size.height
@@ -364,7 +280,7 @@ fun DrawScope.drawLadder(ladderData: List<LadderLine>) {
 fun calculatePlayerPathForIndex(
     playerIndex: Int,
     ladderData: List<LadderLine>,
-    playersInfo: List<PlayerGameInfo>
+    playersInfo: List<Player>
 ): List<Offset>? {
     // 해당 인덱스의 플레이어 정보를 가져와서 경로를 계산
     val player = playersInfo.getOrNull(playerIndex) ?: return null
@@ -380,7 +296,7 @@ fun calculatePlayerPathForIndex(
     }.distinct()
 
     val path = mutableListOf<Offset>()
-    var currentPosition = player.startPoint
+    var currentPosition = player.playerPosition?.startPoint
     path.add(currentPosition!!)
 
     while (currentPosition?.y!! < 1f) {
