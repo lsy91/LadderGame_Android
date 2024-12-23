@@ -53,8 +53,11 @@ import kotlin.random.Random
  */
 @Composable
 fun GameScreen(
-    playerInfo: Player,
-    winnerInfo: Winner
+    uiState: GameState,
+    players: List<Player>,
+    winners: List<Winner>,
+    navigateToScreen: (String) -> Unit,
+    onEvent: (GameIntent) -> Unit
 ) {
     val shuffledPlayerNames = remember { listOf("") }
 //    val shuffledWinnerTitles = remember { winnerInfo..shuffled() }
@@ -99,10 +102,10 @@ fun GameScreen(
         }
     }
 
-    LaunchedEffect(playerInfo.playerIndex) {
+    LaunchedEffect(players) {
         // ladderData를 비동기로 생성
         ladderData.value = withContext(Dispatchers.Default) {
-            generateLadderData(playerInfo.playerIndex)
+            generateLadderData(players.size)
         }
 
         // ladderData가 완료된 후 결과를 사용하여 playerGameInfo 생성
@@ -139,7 +142,7 @@ fun GameScreen(
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
             DrawPlayers(
-                playerCount = playerInfo.playerIndex,
+                playerCount = players.size,
                 shuffledPlayerNames = shuffledPlayerNames,
                 onPlayerSelected = { index ->
                     // 플레이어가 클릭되었을 때 해당 플레이어 경로를 설정
