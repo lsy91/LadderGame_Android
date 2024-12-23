@@ -3,6 +3,7 @@ package com.quintet.laddergame.ui.game
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -17,7 +18,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -32,9 +32,10 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.quintet.laddergame.R
 import com.quintet.laddergame.model.HorizontalLine
 import com.quintet.laddergame.model.LadderLine
 import com.quintet.laddergame.model.Player
@@ -59,8 +60,6 @@ fun GameScreen(
     navigateToScreen: (String) -> Unit,
     onEvent: (GameIntent) -> Unit
 ) {
-    val shuffledPlayerNames = remember { listOf("") }
-//    val shuffledWinnerTitles = remember { winnerInfo..shuffled() }
     val gameElementsPadding = 16.dp
 
 //    var gameInProgress by remember { mutableStateOf(false) }
@@ -70,7 +69,6 @@ fun GameScreen(
 
     val ladderData = remember { mutableStateOf<List<LadderLine>>(emptyList()) }
     var playerGameInfo by remember { mutableStateOf<List<PlayerGameInfo>>(emptyList()) }
-    var isLoading by remember { mutableStateOf(true) }
 
     // 선택된 플레이어 경로를 저장할 상태
     var selectedPlayerPath by remember { mutableStateOf<List<Offset>?>(null) }
@@ -110,8 +108,6 @@ fun GameScreen(
 
         // ladderData가 완료된 후 결과를 사용하여 playerGameInfo 생성
         playerGameInfo = generatePlayerGameInfo(ladderData.value)
-
-        isLoading = false
     }
 
     Column(
@@ -125,16 +121,6 @@ fun GameScreen(
             .padding(vertical = 20.dp),
         verticalArrangement = Arrangement.Center
     ) {
-        Text(
-            text = "플레이어를 클릭하면 게임이 시작됩니다.",
-            fontSize = 12.sp,
-            textAlign = TextAlign.Center,
-            style = MaterialTheme.typography.titleSmall,
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Spacer(modifier = Modifier.height(20.dp))
-
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -142,8 +128,7 @@ fun GameScreen(
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
             DrawPlayers(
-                playerCount = players.size,
-                shuffledPlayerNames = shuffledPlayerNames,
+                players = players,
                 onPlayerSelected = { index ->
                     // 플레이어가 클릭되었을 때 해당 플레이어 경로를 설정
                     val path = playerGameInfo.getOrNull(index)?.let {
@@ -159,7 +144,7 @@ fun GameScreen(
 
         Spacer(modifier = Modifier.height(gameElementsPadding)) // 세로 요소 간 간격
 
-        if (isLoading) {
+        if (uiState.isLoading) {
             // 로딩 중일 때 보여질 로딩 바
             CircularProgressIndicator(
                 modifier = Modifier
@@ -199,79 +184,53 @@ fun GameScreen(
                 .fillMaxWidth().padding(horizontal = 20.dp),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-//            DrawWinners(playerInfo.playerIndex, shuffledWinnerTitles)
+            DrawWinners(winners)
         }
 
         Spacer(modifier = Modifier.height(gameElementsPadding)) // 세로 요소 간 간격
-
-        /** TODO 전체 플레이어 동시 시작 버튼은 추후에 구현 예정 **/
-//        Button(
-//            onClick = {
-//                if (!gameInProgress) {
-//                    scope.launch {
-//                        // 애니메이션 초기화
-//                        animatedX.snapTo(0f)
-//                        animatedY.snapTo(0f)
-//                        // 애니메이션 시작
-//                        animatedX.animateTo(
-//                            targetValue = 1f,  // 예시로 x, y가 모두 1로 끝까지 이동
-//                            animationSpec = tween(durationMillis = 1000)
-//                        )
-//                        animatedY.animateTo(
-//                            targetValue = 1f,
-//                            animationSpec = tween(durationMillis = 1000)
-//                        )
-//                        gameInProgress = false
-//                    }
-//                    gameInProgress = true
-//                }
-//            },
-//            modifier = Modifier
-//                .padding(gameElementsPadding)
-//                .align(Alignment.CenterHorizontally)
-//        ) {
-//            Text("Start Game")
-//        }
     }
 }
 
 @Composable
 fun DrawPlayers(
-    playerCount: Int,
-    shuffledPlayerNames: List<String>,
+    players: List<Player>,
     onPlayerSelected: (Int) -> Unit // 플레이어가 선택되었을 때 콜백 추가
 ) {
-    for (i in 0 until playerCount) {
-        Box(
+    players.forEach { player ->
+        Image(
+            painter = painterResource(player.player),
+            contentDescription = "Player Icon",
             modifier = Modifier
-                .background(Color.Red, shape = RoundedCornerShape(8.dp))
-                .padding(8.dp)
-                .clickable { onPlayerSelected(i) } // 클릭 이벤트 처리
-        ) {
-            Text(
-                text = shuffledPlayerNames.getOrElse(i) { "" },
-                color = Color.Black,
-                fontSize = 16.sp,
-                modifier = Modifier.align(Alignment.Center)
-            )
-        }
+                .size(30.dp)
+                .clickable {
+                    onPlayerSelected(player.playerIndex)
+                }
+        )
     }
 }
 
 @Composable
-fun DrawWinners(playerCount: Int, shuffledWinnerTitles: List<String>) {
-    for (i in 0 until playerCount) {
-        Box(
-            modifier = Modifier
-                .background(Color.Red, shape = RoundedCornerShape(8.dp))
-                .padding(8.dp)
-        ) {
-            Text(
-                text = shuffledWinnerTitles.getOrElse(i) { "꽝" },
-                color = Color.Black,
-                fontSize = 16.sp,
-                modifier = Modifier.align(Alignment.Center)
+fun DrawWinners(winners: List<Winner>) {
+    winners.forEach { winner ->
+        if (winner.isWinner) {
+            Image(
+                painter = painterResource(R.drawable.ic_winner),
+                contentDescription = "Winner Icon",
+                modifier = Modifier.size(30.dp)
             )
+        } else {
+            Box(
+                modifier = Modifier
+                    .background(Color.Red, shape = RoundedCornerShape(8.dp))
+                    .padding(8.dp)
+            ) {
+                Text(
+                    text = "꽝",
+                    color = Color.Black,
+                    fontSize = 16.sp,
+                    modifier = Modifier.align(Alignment.Center)
+                )
+            }
         }
     }
 }
