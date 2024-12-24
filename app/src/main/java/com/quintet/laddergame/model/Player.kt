@@ -11,7 +11,7 @@ import androidx.compose.ui.geometry.Offset
 @Keep
 data class Player(
     val playerIndex: Int,
-    val player: Int,
+    val playerId: Int,
     val startPoint: Offset? = Offset(0f,0f),  // 각 플레이어별 vertical startPoint
     val endPoint: Offset? = Offset(0f,0f),    // 각 플레이어별 vertical endPoint
 )

@@ -31,10 +31,10 @@ class PlayerRepository @Inject constructor(): IPlayerRepository {
         val randomIcons = playerIconList.shuffled().take(inputPlayerCount)
 
         // Player List 생성
-        val playerList = randomIcons.mapIndexed { playerIndex, player ->
+        val playerList = randomIcons.mapIndexed { playerIndex, playerId ->
             Player(
                 playerIndex = playerIndex,
-                player = player
+                playerId = playerId
             )
         }
 

@@ -132,7 +132,7 @@ fun PlayerScreen(
                     )
 
                     Image(
-                        painter = painterResource(uiState.players[playerIndex].player),
+                        painter = painterResource(uiState.players[playerIndex].playerId),
                         contentDescription = "Player Icon",
                         modifier = Modifier.size(30.dp).weight(1f)
                     )

@@ -8,4 +8,5 @@ sealed class GameIntent {
     data class InitData(val players: List<Player>, val winners: List<Winner>): GameIntent()
     data class LoadLadders(val playerCount: Int): GameIntent()
     data class SetPlayerAndWinnerPosition(val ladders: List<LadderLine>): GameIntent()
+    data class CalculatePlayerPathForIndex(val playerIndex: Int, val ladders: List<LadderLine>, val players: List<Player>): GameIntent()
 }

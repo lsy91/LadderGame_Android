@@ -1,5 +1,6 @@
 package com.quintet.laddergame.ui.game
 
+import android.graphics.drawable.BitmapDrawable
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
@@ -22,24 +23,29 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.rememberAsyncImagePainter
 import com.quintet.laddergame.R
 import com.quintet.laddergame.model.LadderLine
 import com.quintet.laddergame.model.Player
 import com.quintet.laddergame.model.Winner
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlin.math.floor
 
@@ -61,8 +67,13 @@ fun GameScreen(
     val animatedX = remember { Animatable(0f) }  // x 애니메이션
     val animatedY = remember { Animatable(0f) }  // y 애니메이션
 
+    // 비동기 작업을 실행할 수 있는 코루틴 스코프
+    val coroutineScope = rememberCoroutineScope()
+
     // 선택된 플레이어 경로를 저장할 상태
     var selectedPlayerPath by remember { mutableStateOf<List<Offset>?>(null) }
+    // 선택된 플레이어 ID
+    var selectedPlayerId by remember { mutableIntStateOf(0) }
     var isAnimating by remember { mutableStateOf(false) }
 
     // 선택된 플레이어 경로에 따른 애니메이션 처리
@@ -126,6 +137,7 @@ fun GameScreen(
                     }
                     if (path != null) {
                         selectedPlayerPath = path
+                        selectedPlayerId = players[index].playerId
                         isAnimating = true
                     }
                 }
@@ -142,6 +154,10 @@ fun GameScreen(
                     .align(Alignment.CenterHorizontally)
             )
         } else {
+
+            // 애니메이션을 그릴 플레이어의 경로
+            val imagePainter = rememberAsyncImagePainter(selectedPlayerId)
+
             // 사다리 그리기
             Canvas(
                 modifier = Modifier
@@ -155,7 +171,6 @@ fun GameScreen(
                     onEvent = onEvent
                 )
 
-                // 애니메이션을 그릴 플레이어의 경로
                 selectedPlayerPath?.let {
                     // 경로에 따라 애니메이션된 위치 그리기
                     drawCircle(
@@ -191,7 +206,7 @@ fun DrawPlayers(
 ) {
     players.forEach { player ->
         Image(
-            painter = painterResource(player.player),
+            painter = painterResource(player.playerId),
             contentDescription = "Player Icon",
             modifier = Modifier
                 .size(30.dp)
