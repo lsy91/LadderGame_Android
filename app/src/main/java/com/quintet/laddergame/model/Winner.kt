@@ -11,5 +11,5 @@ import androidx.compose.ui.geometry.Offset
 @Keep
 data class Winner(
     val isWinner: Boolean = false,
-    val point: Offset? = null
+    val point: Offset? = Offset(0f,0f)
 )

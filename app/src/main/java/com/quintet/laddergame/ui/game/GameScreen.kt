@@ -1,6 +1,5 @@
 package com.quintet.laddergame.ui.game
 
-import android.util.Log
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
@@ -93,13 +92,12 @@ fun GameScreen(
     }
 
     LaunchedEffect(players) {
-        // ladderData를 비동기로 생성
+        onEvent(GameIntent.InitData(players, winners))
+
+        // 사다리 좌표값을 비동기로 생성
         withContext(Dispatchers.Default) {
             onEvent(GameIntent.LoadLadders(players.size))
         }
-
-        // ladderData가 완료된 후 결과를 사용하여 Player Position 설정
-        onEvent(GameIntent.SetPlayerPosition(uiState.ladders))
     }
 
     Column(
@@ -119,9 +117,6 @@ fun GameScreen(
                 .padding(horizontal = 20.dp),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            // TODO 차라리 gameViewModel 에 players 를 하나 만들어서, PlayerViewModel 에서 가져온 players 를 합친 다음 Intent 로 player position 을 업데이트하자.
-            Log.e("sy.lee", players.toString())
-
             DrawPlayers(
                 players = players,
                 onPlayerSelected = { index ->
@@ -155,7 +150,10 @@ fun GameScreen(
                     .padding(horizontal = gameElementsPadding)
             ) {
                 // ladderDrawn이 true 일 때만 사다리를 그리도록 함
-                drawLadder(uiState.ladders)
+                drawLadder(
+                    ladders = uiState.ladders,
+                    onEvent = onEvent
+                )
 
                 // 애니메이션을 그릴 플레이어의 경로
                 selectedPlayerPath?.let {
@@ -230,12 +228,12 @@ fun DrawWinners(winners: List<Winner>) {
     }
 }
 
-fun DrawScope.drawLadder(ladderData: List<LadderLine>) {
+fun DrawScope.drawLadder(ladders: List<LadderLine>, onEvent: (GameIntent) -> Unit) {
     val stroke = Stroke(4.dp.toPx())
     val ladderHeight = size.height
 
     // Draw ladder lines from precomputed data
-    ladderData.forEach { line ->
+    ladders.forEach { line ->
         // 세로줄 그리기
         line.vertical?.let {
             val startX = it.start.x * size.width
@@ -272,6 +270,9 @@ fun DrawScope.drawLadder(ladderData: List<LadderLine>) {
             )
         }
     }
+
+    // 그려진 사다리를 사용하여 Player & Winner Position 설정
+    onEvent(GameIntent.SetPlayerAndWinnerPosition(ladders))
 }
 
 /**
@@ -296,7 +297,7 @@ fun calculatePlayerPathForIndex(
     }.distinct()
 
     val path = mutableListOf<Offset>()
-    var currentPosition = player.playerPosition?.startPoint
+    var currentPosition = player.startPoint
     path.add(currentPosition!!)
 
     while (currentPosition?.y!! < 1f) {
